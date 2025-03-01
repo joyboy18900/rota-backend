@@ -16,11 +16,11 @@ services:
     networks:
       - rota-network
     depends_on:
-      - go-api  # Kong ต้องรอ Go API รันก่อน
+      - rota-api  # Kong ต้องรอ Go API รันก่อน
 
-  go-api:
+  rota-api:
     build: .
-    container_name: go-api
+    container_name: rota-api
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -28,7 +28,7 @@ services:
       - DB_USER=rota_user
       - DB_PASSWORD=rota_pass
     expose:
-      - "3000"
+      - "3000"  # ฟังภายใน Docker network
     volumes:
       - /opt/rota-backend:/app  # Mount ไฟล์โปรเจกต์
     networks:

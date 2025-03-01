@@ -2,9 +2,9 @@ _format_version: "3.0"
 _transform: true
 
 services:
-  - name: go-api-service
-    url: http://host.docker.internal:3000
+  - name: rota-api-service
+    url: http://rota-api:3000
     routes:
-      - name: go-api-route
+      - name: rota-api-route
         paths:
           - /api
