@@ -1,0 +1,59 @@
+services:
+  kong:
+    image: kong/kong-gateway:3.9
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml  # ใช้ declarative config
+      KONG_PROXY_LISTEN: 0.0.0.0:8000  # Proxy Port
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001  # Admin Port
+    ports:
+      - "8000:8000"  # API Gateway Port
+      - "8001:8001"  # Admin API Port
+      - "8443:8443"  # HTTPS Proxy
+    volumes:
+      - ./config:/usr/local/kong/declarative  # Mount kong.yml
+    networks:
+      - rota-network
+    depends_on:
+      - go-api  # Kong ต้องรอ Go API รันก่อน
+
+  go-api:
+    build: .
+    container_name: go-api
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=rota
+      - DB_USER=rota_user
+      - DB_PASSWORD=rota_pass
+    # ports:
+    #   - "3000:3000"
+    expose:
+      - "3000"
+    volumes:
+      - /opt/rota-backend:/app  # Mount ไฟล์โปรเจกต์
+    networks:
+      - rota-network
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=rota_user
+      - POSTGRES_PASSWORD=rota_pass
+      - POSTGRES_DB=rota
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rota-network
+
+networks:
+  rota-network:
+    driver: bridge
+
+volumes:
+  kong_data:
+    driver: local
+  postgres_data:
+    driver: local

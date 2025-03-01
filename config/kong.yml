@@ -1,0 +1,10 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: go-api-service
+    url: http://host.docker.internal:3000
+    routes:
+      - name: go-api-route
+        paths:
+          - /api
