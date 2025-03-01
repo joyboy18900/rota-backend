@@ -33,7 +33,7 @@ func status(c *fiber.Ctx) error {
 
 func setupRoutes(app *fiber.App) {
 	app.Get("/", status)
-	app.Get("/api/bookmark", bookmark.GetAllBookmarks)
-	app.Post("/api/bookmark", bookmark.SaveBookmark)
+	app.Get("/bookmark", bookmark.GetAllBookmarks)
+	app.Post("/bookmark", bookmark.SaveBookmark)
 	app.Get("/swagger/*", swagger.HandlerDefault)
 }

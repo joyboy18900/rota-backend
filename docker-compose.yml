@@ -30,7 +30,7 @@ services:
     expose:
       - "3000"  # ฟังภายใน Docker network
     volumes:
-      - /opt/rota-backend:/app  # Mount ไฟล์โปรเจกต์
+      - ./:/app  # Mount ไฟล์โปรเจกต์
     networks:
       - rota-network
 
