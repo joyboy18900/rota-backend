@@ -29,3 +29,6 @@ vendor/
 
 # env file
 .env
+
+# Data directory
+data/
