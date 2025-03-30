@@ -13,7 +13,7 @@ import (
 type RouteRepository interface {
 	Create(ctx context.Context, route *models.Route) error
 	FindByID(ctx context.Context, id uint) (*models.Route, error)
-	FindAll(ctx context.Context) ([]models.Route, error)
+	FindAll(ctx context.Context) ([]*models.Route, error)
 	FindByStation(ctx context.Context, stationID uint) ([]models.Route, error)
 	Update(ctx context.Context, route *models.Route) error
 	Delete(ctx context.Context, id uint) error
@@ -50,8 +50,8 @@ func (r *routeRepository) FindByID(ctx context.Context, id uint) (*models.Route,
 }
 
 // FindAll retrieves all routes
-func (r *routeRepository) FindAll(ctx context.Context) ([]models.Route, error) {
-	var routes []models.Route
+func (r *routeRepository) FindAll(ctx context.Context) ([]*models.Route, error) {
+	var routes []*models.Route
 	if err := r.db.WithContext(ctx).Preload("StartStation").Preload("EndStation").Find(&routes).Error; err != nil {
 		return nil, fmt.Errorf("failed to find routes: %w", err)
 	}

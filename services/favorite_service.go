@@ -14,6 +14,11 @@ type FavoriteService interface {
 	AddFavorite(ctx context.Context, userID, stationID uint) (*models.Favorite, error)
 	GetUserFavorites(ctx context.Context, userID uint) ([]models.Favorite, error)
 	RemoveFavorite(ctx context.Context, id, userID uint) error
+	GetFavoriteByID(ctx context.Context, id uint) (*models.Favorite, error)
+	GetAllFavorites(ctx context.Context) ([]models.Favorite, error)
+	CreateFavorite(ctx context.Context, favorite *models.Favorite) error
+	UpdateFavorite(ctx context.Context, favorite *models.Favorite) error
+	DeleteFavorite(ctx context.Context, id uint) error
 }
 
 // favoriteService implements FavoriteService
@@ -64,5 +69,25 @@ func (s *favoriteService) RemoveFavorite(ctx context.Context, id, userID uint) e
 		return fmt.Errorf("unauthorized to remove this favorite")
 	}
 
+	return s.favoriteRepo.Delete(ctx, id)
+}
+
+func (s *favoriteService) GetFavoriteByID(ctx context.Context, id uint) (*models.Favorite, error) {
+	return s.favoriteRepo.FindByID(ctx, id)
+}
+
+func (s *favoriteService) GetAllFavorites(ctx context.Context) ([]models.Favorite, error) {
+	return s.favoriteRepo.FindAll(ctx)
+}
+
+func (s *favoriteService) CreateFavorite(ctx context.Context, favorite *models.Favorite) error {
+	return s.favoriteRepo.Create(ctx, favorite)
+}
+
+func (s *favoriteService) UpdateFavorite(ctx context.Context, favorite *models.Favorite) error {
+	return s.favoriteRepo.Update(ctx, favorite)
+}
+
+func (s *favoriteService) DeleteFavorite(ctx context.Context, id uint) error {
 	return s.favoriteRepo.Delete(ctx, id)
 }

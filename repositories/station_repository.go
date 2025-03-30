@@ -13,7 +13,7 @@ import (
 type StationRepository interface {
 	Create(ctx context.Context, station *models.Station) error
 	FindByID(ctx context.Context, id uint) (*models.Station, error)
-	FindAll(ctx context.Context) ([]models.Station, error)
+	FindAll(ctx context.Context) ([]*models.Station, error)
 	Update(ctx context.Context, station *models.Station) error
 	Delete(ctx context.Context, id uint) error
 }
@@ -49,8 +49,8 @@ func (r *stationRepository) FindByID(ctx context.Context, id uint) (*models.Stat
 }
 
 // FindAll retrieves all stations
-func (r *stationRepository) FindAll(ctx context.Context) ([]models.Station, error) {
-	var stations []models.Station
+func (r *stationRepository) FindAll(ctx context.Context) ([]*models.Station, error) {
+	var stations []*models.Station
 	if err := r.db.WithContext(ctx).Find(&stations).Error; err != nil {
 		return nil, fmt.Errorf("failed to find stations: %w", err)
 	}

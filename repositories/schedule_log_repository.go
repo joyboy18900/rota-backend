@@ -2,20 +2,19 @@ package repositories
 
 import (
 	"context"
-	"errors"
-	"fmt"
+
 	"rota-api/models"
 
 	"gorm.io/gorm"
 )
 
-// ScheduleLogRepository interface defines methods for schedule log database operations
+// ScheduleLogRepository defines the interface for schedule log-related database operations
 type ScheduleLogRepository interface {
-	Create(ctx context.Context, log *models.ScheduleLog) error
 	FindByID(ctx context.Context, id uint) (*models.ScheduleLog, error)
-	FindAll(ctx context.Context) ([]models.ScheduleLog, error)
-	FindBySchedule(ctx context.Context, scheduleID uint) ([]models.ScheduleLog, error)
-	FindByStaff(ctx context.Context, staffID uint) ([]models.ScheduleLog, error)
+	FindAll(ctx context.Context) ([]*models.ScheduleLog, error)
+	Create(ctx context.Context, scheduleLog *models.ScheduleLog) error
+	Update(ctx context.Context, scheduleLog *models.ScheduleLog) error
+	Delete(ctx context.Context, id uint) error
 }
 
 // scheduleLogRepository implements ScheduleLogRepository
@@ -28,49 +27,30 @@ func NewScheduleLogRepository(db *gorm.DB) ScheduleLogRepository {
 	return &scheduleLogRepository{db}
 }
 
-// Create stores a new schedule log in the database
-func (r *scheduleLogRepository) Create(ctx context.Context, log *models.ScheduleLog) error {
-	if err := r.db.WithContext(ctx).Create(log).Error; err != nil {
-		return fmt.Errorf("failed to create schedule log: %w", err)
-	}
-	return nil
-}
-
-// FindByID retrieves a schedule log by ID
 func (r *scheduleLogRepository) FindByID(ctx context.Context, id uint) (*models.ScheduleLog, error) {
-	var log models.ScheduleLog
-	if err := r.db.WithContext(ctx).Preload("Schedule").Preload("Staff").First(&log, id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("schedule log not found: %w", err)
-		}
-		return nil, fmt.Errorf("failed to find schedule log: %w", err)
+	var scheduleLog models.ScheduleLog
+	if err := r.db.WithContext(ctx).First(&scheduleLog, id).Error; err != nil {
+		return nil, err
 	}
-	return &log, nil
+	return &scheduleLog, nil
 }
 
-// FindAll retrieves all schedule logs
-func (r *scheduleLogRepository) FindAll(ctx context.Context) ([]models.ScheduleLog, error) {
-	var logs []models.ScheduleLog
-	if err := r.db.WithContext(ctx).Preload("Schedule").Preload("Staff").Find(&logs).Error; err != nil {
-		return nil, fmt.Errorf("failed to find schedule logs: %w", err)
+func (r *scheduleLogRepository) FindAll(ctx context.Context) ([]*models.ScheduleLog, error) {
+	var scheduleLogs []*models.ScheduleLog
+	if err := r.db.WithContext(ctx).Find(&scheduleLogs).Error; err != nil {
+		return nil, err
 	}
-	return logs, nil
+	return scheduleLogs, nil
 }
 
-// FindBySchedule retrieves all schedule logs for a specific schedule
-func (r *scheduleLogRepository) FindBySchedule(ctx context.Context, scheduleID uint) ([]models.ScheduleLog, error) {
-	var logs []models.ScheduleLog
-	if err := r.db.WithContext(ctx).Preload("Schedule").Preload("Staff").Where("schedule_id = ?", scheduleID).Find(&logs).Error; err != nil {
-		return nil, fmt.Errorf("failed to find schedule logs: %w", err)
-	}
-	return logs, nil
+func (r *scheduleLogRepository) Create(ctx context.Context, scheduleLog *models.ScheduleLog) error {
+	return r.db.WithContext(ctx).Create(scheduleLog).Error
 }
 
-// FindByStaff retrieves all schedule logs for a specific staff
-func (r *scheduleLogRepository) FindByStaff(ctx context.Context, staffID uint) ([]models.ScheduleLog, error) {
-	var logs []models.ScheduleLog
-	if err := r.db.WithContext(ctx).Preload("Schedule").Preload("Staff").Where("staff_id = ?", staffID).Find(&logs).Error; err != nil {
-		return nil, fmt.Errorf("failed to find schedule logs: %w", err)
-	}
-	return logs, nil
+func (r *scheduleLogRepository) Update(ctx context.Context, scheduleLog *models.ScheduleLog) error {
+	return r.db.WithContext(ctx).Save(scheduleLog).Error
+}
+
+func (r *scheduleLogRepository) Delete(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Delete(&models.ScheduleLog{}, id).Error
 }

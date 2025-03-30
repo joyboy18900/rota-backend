@@ -3,58 +3,37 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
+
+	"rota-api/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-
-	"rota-api/models"
 )
 
-// InitDatabase initializes the database connection
-func InitDatabase(cfg *Config) (*gorm.DB, error) {
-	// Set up database connection
-	gormConfig := &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	}
+// InitDB initializes the database connection
+func InitDB() *gorm.DB {
+	// Get database connection details from environment variables
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
 
-	// Add logger for development environment
-	if cfg.Environment == "development" {
-		gormConfig.Logger = logger.Default.LogMode(logger.Info)
-	}
+	// Create database connection string
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, dbPort, dbUser, dbPassword, dbName)
 
-	// PostgreSQL connection string
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
-
-	// Connect to PostgreSQL
-	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
+	// Open database connection
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to PostgreSQL database: %w", err)
-	}
-	log.Println("Connected to PostgreSQL database")
-
-	// Auto-migrate models in development only
-	if cfg.Environment == "development" {
-		log.Println("Running auto-migrations for development environment...")
-		err = db.AutoMigrate(
-			&models.User{},
-			&models.OAuthToken{},
-			&models.Station{},
-			&models.Route{},
-			&models.Schedule{},
-			&models.Favorite{},
-			&models.Staff{},
-			&models.Vehicle{},
-			&models.ScheduleLog{},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to migrate database: %w", err)
-		}
-	} else {
-		log.Println("Skipping auto-migrations in production environment")
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	log.Println("Database initialized successfully")
-	return db, nil
+	// Auto migrate the schema
+	if err := db.AutoMigrate(&models.User{}); err != nil {
+		log.Printf("Failed to auto migrate: %v", err)
+	}
+
+	return db
 }

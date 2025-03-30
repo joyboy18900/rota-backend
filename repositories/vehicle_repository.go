@@ -14,7 +14,7 @@ type VehicleRepository interface {
 	Create(ctx context.Context, vehicle *models.Vehicle) error
 	FindByID(ctx context.Context, id uint) (*models.Vehicle, error)
 	FindByLicensePlate(ctx context.Context, licensePlate string) (*models.Vehicle, error)
-	FindAll(ctx context.Context) ([]models.Vehicle, error)
+	FindAll(ctx context.Context) ([]*models.Vehicle, error)
 	FindByRoute(ctx context.Context, routeID uint) ([]models.Vehicle, error)
 	Update(ctx context.Context, vehicle *models.Vehicle) error
 	Delete(ctx context.Context, id uint) error
@@ -63,8 +63,8 @@ func (r *vehicleRepository) FindByLicensePlate(ctx context.Context, licensePlate
 }
 
 // FindAll retrieves all vehicles
-func (r *vehicleRepository) FindAll(ctx context.Context) ([]models.Vehicle, error) {
-	var vehicles []models.Vehicle
+func (r *vehicleRepository) FindAll(ctx context.Context) ([]*models.Vehicle, error) {
+	var vehicles []*models.Vehicle
 	if err := r.db.WithContext(ctx).Preload("Route").Find(&vehicles).Error; err != nil {
 		return nil, fmt.Errorf("failed to find vehicles: %w", err)
 	}

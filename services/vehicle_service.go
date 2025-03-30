@@ -10,11 +10,10 @@ import (
 
 // VehicleService interface defines methods for vehicle service
 type VehicleService interface {
-	CreateVehicle(ctx context.Context, licensePlate string, capacity int, driverName string, routeID uint) (*models.Vehicle, error)
 	GetVehicleByID(ctx context.Context, id uint) (*models.Vehicle, error)
-	GetAllVehicles(ctx context.Context) ([]models.Vehicle, error)
-	GetVehiclesByRoute(ctx context.Context, routeID uint) ([]models.Vehicle, error)
-	UpdateVehicle(ctx context.Context, id uint, licensePlate string, capacity int, driverName string, routeID uint) (*models.Vehicle, error)
+	GetAllVehicles(ctx context.Context) ([]*models.Vehicle, error)
+	CreateVehicle(ctx context.Context, vehicle *models.Vehicle) error
+	UpdateVehicle(ctx context.Context, vehicle *models.Vehicle) error
 	DeleteVehicle(ctx context.Context, id uint) error
 }
 
@@ -29,25 +28,18 @@ func NewVehicleService(vehicleRepo repositories.VehicleRepository) VehicleServic
 }
 
 // CreateVehicle creates a new vehicle
-func (s *vehicleService) CreateVehicle(ctx context.Context, licensePlate string, capacity int, driverName string, routeID uint) (*models.Vehicle, error) {
+func (s *vehicleService) CreateVehicle(ctx context.Context, vehicle *models.Vehicle) error {
 	// Check if license plate already exists
-	existingVehicle, err := s.vehicleRepo.FindByLicensePlate(ctx, licensePlate)
+	existingVehicle, err := s.vehicleRepo.FindByLicensePlate(ctx, vehicle.LicensePlate)
 	if err == nil && existingVehicle != nil {
-		return nil, fmt.Errorf("vehicle with license plate %s already exists", licensePlate)
-	}
-
-	vehicle := &models.Vehicle{
-		LicensePlate: licensePlate,
-		Capacity:     capacity,
-		DriverName:   driverName,
-		RouteID:      routeID,
+		return fmt.Errorf("vehicle with license plate %s already exists", vehicle.LicensePlate)
 	}
 
 	if err := s.vehicleRepo.Create(ctx, vehicle); err != nil {
-		return nil, fmt.Errorf("failed to create vehicle: %w", err)
+		return fmt.Errorf("failed to create vehicle: %w", err)
 	}
 
-	return vehicle, nil
+	return nil
 }
 
 // GetVehicleByID retrieves a vehicle by ID
@@ -56,46 +48,41 @@ func (s *vehicleService) GetVehicleByID(ctx context.Context, id uint) (*models.V
 }
 
 // GetAllVehicles retrieves all vehicles
-func (s *vehicleService) GetAllVehicles(ctx context.Context) ([]models.Vehicle, error) {
+func (s *vehicleService) GetAllVehicles(ctx context.Context) ([]*models.Vehicle, error) {
 	return s.vehicleRepo.FindAll(ctx)
 }
 
-// GetVehiclesByRoute retrieves all vehicles for a specific route
-func (s *vehicleService) GetVehiclesByRoute(ctx context.Context, routeID uint) ([]models.Vehicle, error) {
-	return s.vehicleRepo.FindByRoute(ctx, routeID)
-}
-
 // UpdateVehicle updates a vehicle
-func (s *vehicleService) UpdateVehicle(ctx context.Context, id uint, licensePlate string, capacity int, driverName string, routeID uint) (*models.Vehicle, error) {
-	vehicle, err := s.vehicleRepo.FindByID(ctx, id)
+func (s *vehicleService) UpdateVehicle(ctx context.Context, vehicle *models.Vehicle) error {
+	existingVehicle, err := s.vehicleRepo.FindByID(ctx, vehicle.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find vehicle: %w", err)
+		return fmt.Errorf("failed to find vehicle: %w", err)
 	}
 
 	// Update fields if provided
-	if licensePlate != "" && licensePlate != vehicle.LicensePlate {
+	if vehicle.LicensePlate != "" && vehicle.LicensePlate != existingVehicle.LicensePlate {
 		// Check if license plate already exists
-		existingVehicle, err := s.vehicleRepo.FindByLicensePlate(ctx, licensePlate)
-		if err == nil && existingVehicle != nil && existingVehicle.ID != id {
-			return nil, fmt.Errorf("vehicle with license plate %s already exists", licensePlate)
+		existingVehicle, err := s.vehicleRepo.FindByLicensePlate(ctx, vehicle.LicensePlate)
+		if err == nil && existingVehicle != nil && existingVehicle.ID != vehicle.ID {
+			return fmt.Errorf("vehicle with license plate %s already exists", vehicle.LicensePlate)
 		}
-		vehicle.LicensePlate = licensePlate
+		existingVehicle.LicensePlate = vehicle.LicensePlate
 	}
-	if capacity != 0 {
-		vehicle.Capacity = capacity
+	if vehicle.Capacity != 0 {
+		existingVehicle.Capacity = vehicle.Capacity
 	}
-	if driverName != "" {
-		vehicle.DriverName = driverName
+	if vehicle.DriverName != "" {
+		existingVehicle.DriverName = vehicle.DriverName
 	}
-	if routeID != 0 {
-		vehicle.RouteID = routeID
-	}
-
-	if err := s.vehicleRepo.Update(ctx, vehicle); err != nil {
-		return nil, fmt.Errorf("failed to update vehicle: %w", err)
+	if vehicle.RouteID != 0 {
+		existingVehicle.RouteID = vehicle.RouteID
 	}
 
-	return vehicle, nil
+	if err := s.vehicleRepo.Update(ctx, existingVehicle); err != nil {
+		return fmt.Errorf("failed to update vehicle: %w", err)
+	}
+
+	return nil
 }
 
 // DeleteVehicle deletes a vehicle

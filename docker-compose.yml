@@ -27,12 +27,24 @@ services:
       - DB_NAME=rota
       - DB_USER=rota_local_user
       - DB_PASSWORD=rota_local_pass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=rota_redis_local_pass
+      - REDIS_DB=0
+      - JWT_SECRET=your-secret-key
+      - JWT_ACCESS_TOKEN_TTL=24h
+      - JWT_REFRESH_TOKEN_TTL=168h
     expose:
       - "3000"  # listen in Docker network
     volumes:
       - ./:/app  # Mount project
     networks:
       - rota-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   postgres:
     image: postgres:latest
@@ -47,6 +59,27 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     networks:
       - rota-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rota_local_user -d rota"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --requirepass rota_redis_local_pass --appendonly yes  # Enable password and persistence
+    networks:
+      - rota-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "rota_redis_local_pass", "ping"]  # Add password to healthcheck
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   rota-network:

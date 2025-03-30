@@ -15,7 +15,7 @@ type StaffRepository interface {
 	FindByID(ctx context.Context, id uint) (*models.Staff, error)
 	FindByEmail(ctx context.Context, email string) (*models.Staff, error)
 	FindByUsername(ctx context.Context, username string) (*models.Staff, error)
-	FindAll(ctx context.Context) ([]models.Staff, error)
+	FindAll(ctx context.Context) ([]*models.Staff, error)
 	FindByStation(ctx context.Context, stationID uint) ([]models.Staff, error)
 	Update(ctx context.Context, staff *models.Staff) error
 	Delete(ctx context.Context, id uint) error
@@ -76,8 +76,8 @@ func (r *staffRepository) FindByUsername(ctx context.Context, username string) (
 }
 
 // FindAll retrieves all staff
-func (r *staffRepository) FindAll(ctx context.Context) ([]models.Staff, error) {
-	var staff []models.Staff
+func (r *staffRepository) FindAll(ctx context.Context) ([]*models.Staff, error) {
+	var staff []*models.Staff
 	if err := r.db.WithContext(ctx).Preload("Station").Find(&staff).Error; err != nil {
 		return nil, fmt.Errorf("failed to find staff: %w", err)
 	}
