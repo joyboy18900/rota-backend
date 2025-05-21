@@ -1,0 +1,10 @@
+package errors
+
+const (
+	INVALID_CREDENTIALS   = "AUTH_001"
+	EMAIL_EXISTS          = "AUTH_002"
+	INVALID_TOKEN         = "AUTH_003"
+	INVALID_REFRESH_TOKEN = "AUTH_004"
+	USERNAME_EXISTS       = "AUTH_005"
+	TOKEN_EXPIRED         = "AUTH_006"
+)

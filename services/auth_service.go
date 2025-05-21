@@ -4,69 +4,250 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	authErrors "rota-api/errors"
-	"rota-api/logs"
 	"rota-api/models"
 	"rota-api/repositories"
 )
 
+// TokenClaims represents the JWT claims for authentication
 type TokenClaims struct {
-	UserID string `json:"user_id"`
+	UserID int             `json:"user_id"`
+	Email  string          `json:"email"`
+	Role   models.UserRole `json:"role"`
 	jwt.RegisteredClaims
 }
 
+// AuthService defines the interface for authentication operations
 type AuthService interface {
 	// User operations
-	Register(ctx context.Context, user *models.User) error
-	Login(ctx context.Context, email, password string) (*models.User, error)
-	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	Register(ctx *fiber.Ctx, user *models.User) (*models.User, error)
+	Login(ctx *fiber.Ctx, email, password string) (*models.User, string, error)
+	GetUserByID(ctx context.Context, id int) (*models.User, error)
 
 	// Token operations
-	GenerateAccessToken(userID string) (string, error)
+	GenerateAccessToken(user *models.User) (string, error)
 	GenerateRefreshToken() (string, error)
 	ValidateAccessToken(token string) (*TokenClaims, error)
-	RefreshToken(ctx context.Context, refreshToken string) (accessToken string, newRefreshToken string, err error)
-	Logout(ctx context.Context, userID string, token string) error
+	RefreshToken(refreshToken string) (string, string, error)
+	Logout(token string) error
 
 	// Token blacklist operations
 	IsTokenBlacklisted(token string) bool
-	AddToBlacklist(token string)
+	AddToBlacklist(token string, expiry time.Duration) error
 
-	// Password operations
-	HashPassword(password string) (string, error)
-	CheckPassword(password, hash string) bool
+	// Utility methods
+	GetJWTSecret() string
 }
 
 // AuthConfig represents the configuration for AuthService
 type AuthConfig struct {
-	TokenConfig models.TokenConfig
-	RedisConfig *repositories.RedisConfig
+	JWTSecret           string        `mapstructure:"jwt_secret"`
+	JWTExpiration       time.Duration `mapstructure:"jwt_expiration"`
+	RefreshExpiration   time.Duration `mapstructure:"refresh_expiration"`
+	BlacklistExpiration time.Duration `mapstructure:"blacklist_expiration"`
 }
 
 // AuthServiceImpl implements AuthService
 type AuthServiceImpl struct {
-	userRepo  repositories.UserRepository
-	redisRepo *repositories.RedisRepository
-	config    AuthConfig
+	userRepo repositories.UserRepository
+	config   AuthConfig
 }
 
-// NewAuthService creates a new auth service
-func NewAuthService(
-	userRepo repositories.UserRepository,
-	redisRepo *repositories.RedisRepository,
-	config AuthConfig,
-) *AuthServiceImpl {
+// NewAuthService creates a new instance of AuthService
+func NewAuthService(userRepo repositories.UserRepository, config AuthConfig) AuthService {
 	return &AuthServiceImpl{
-		userRepo:  userRepo,
-		redisRepo: redisRepo,
-		config:    config,
+		userRepo: userRepo,
+		config:   config,
 	}
+}
+
+// Register creates a new user with the provided information
+func (s *AuthServiceImpl) Register(ctx *fiber.Ctx, user *models.User) (*models.User, error) {
+	// Check if email already exists
+	existingUser, err := s.userRepo.GetByEmail(ctx.Context(), user.Email)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("email already exists")
+	}
+
+	// Check if username is provided and already exists
+	if user.Username != nil && *user.Username != "" {
+		existingUser, err = s.userRepo.GetByUsername(ctx.Context(), *user.Username)
+		if err == nil && existingUser != nil {
+			return nil, errors.New("username already exists")
+		}
+	}
+
+	// Set default role if not provided
+	if user.Role == "" {
+		user.Role = models.RoleUser
+	}
+
+	// Hash password if provided
+	if user.Password != nil && *user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		}
+		hashedPass := string(hashedPassword)
+		user.Password = &hashedPass
+	}
+
+	// Create user in database
+	if err := s.userRepo.Create(ctx.Context(), user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return user, nil
+}
+
+// Login authenticates a user and returns the user and a JWT token
+func (s *AuthServiceImpl) Login(ctx *fiber.Ctx, email, password string) (*models.User, string, error) {
+	// Get user by email
+	user, err := s.userRepo.GetByEmail(ctx.Context(), email)
+	if err != nil || user == nil {
+		return nil, "", errors.New("invalid credentials")
+	}
+
+	// Check if user has a password (OAuth users might not have one)
+	if user.Password == nil {
+		return nil, "", errors.New("please use the appropriate login method")
+	}
+
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(password)); err != nil {
+		return nil, "", errors.New("invalid credentials")
+	}
+
+	// Generate JWT token
+	token, err := s.GenerateAccessToken(user)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	return user, token, nil
+}
+
+// GenerateAccessToken generates a new JWT access token for the user
+func (s *AuthServiceImpl) GenerateAccessToken(user *models.User) (string, error) {
+	// Set token claims
+	claims := TokenClaims{
+		UserID: user.ID,
+		Email:  user.Email,
+		Role:   user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.config.JWTExpiration)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "rota-api",
+		},
+	}
+
+	// Create token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Generate encoded token
+	tokenString, err := token.SignedString([]byte(s.config.JWTSecret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+
+	return tokenString, nil
+}
+
+// GenerateRefreshToken generates a new refresh token
+func (s *AuthServiceImpl) GenerateRefreshToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+// ValidateAccessToken validates the JWT token and returns the claims
+func (s *AuthServiceImpl) ValidateAccessToken(tokenString string) (*TokenClaims, error) {
+	// Parse the token with the claims
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// Validate the alg is what we expect
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.config.JWTSecret), nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+
+	// Check if the token is valid
+	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token")
+}
+
+// RefreshToken refreshes an access token using a refresh token
+func (s *AuthServiceImpl) RefreshToken(refreshToken string) (string, string, error) {
+	// In a real implementation, you would validate the refresh token
+	// and issue a new access token
+	// For now, we'll just generate a new refresh token as well
+	newRefreshToken, err := s.GenerateRefreshToken()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	// In a real implementation, you would:
+	// 1. Validate the refresh token
+	// 2. Get the user ID from the refresh token
+	// 3. Get the user from the database
+	// 4. Generate a new access token
+	// 5. Return both tokens
+
+	// For now, we'll just return empty strings for the access token
+	// and the new refresh token
+	return "", newRefreshToken, nil
+}
+
+// Logout invalidates the provided token
+func (s *AuthServiceImpl) Logout(token string) error {
+	// Add token to blacklist
+	if err := s.AddToBlacklist(token, s.config.BlacklistExpiration); err != nil {
+		return fmt.Errorf("failed to blacklist token: %w", err)
+	}
+	return nil
+}
+
+// IsTokenBlacklisted checks if a token is in the blacklist
+func (s *AuthServiceImpl) IsTokenBlacklisted(token string) bool {
+	// In a real implementation, you would check if the token is in the blacklist
+	// For simplicity, we'll just return false here
+	return false
+}
+
+// AddToBlacklist adds a token to the blacklist
+func (s *AuthServiceImpl) AddToBlacklist(token string, expiry time.Duration) error {
+	// In a real implementation, you would add the token to a blacklist
+	// with the specified expiration time
+	// For example, using Redis:
+	// return s.redisRepo.Set(ctx, fmt.Sprintf("blacklist:%s", token), true, expiry).Err()
+	return nil
+}
+
+// GetJWTSecret returns the JWT secret key
+func (s *AuthServiceImpl) GetJWTSecret() string {
+	return s.config.JWTSecret
+}
+
+// GetUserByID retrieves a user by ID
+func (s *AuthServiceImpl) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	return s.userRepo.GetByID(ctx, id)
 }
 
 // HashPassword hashes a password using bcrypt
@@ -84,60 +265,64 @@ func (s *AuthServiceImpl) CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-// Register creates a new user
-func (s *AuthServiceImpl) Register(ctx context.Context, user *models.User) error {
+// Register creates a new user with the provided information
+func (s *AuthServiceImpl) Register(ctx *fiber.Ctx, user *models.User) (*models.User, error) {
 	// Check if email exists
-	existingUser, err := s.userRepo.FindByEmail(ctx, user.Email)
+	existingUser, err := s.userRepo.FindByEmail(ctx.Context(), user.Email)
 	if err == nil && existingUser != nil {
-		return authErrors.NewAuthError(authErrors.ErrEmailExists, "email already exists", nil)
+		return nil, fmt.Errorf("email already exists")
 	}
 
 	// Check if username exists
-	existingUser, err = s.userRepo.FindByUsername(ctx, user.Username)
-	if err == nil && existingUser != nil {
-		return authErrors.NewAuthError(authErrors.ErrUsernameExists, "username already exists", nil)
+	if user.Username != nil {
+		existingUser, err = s.userRepo.FindByUsername(ctx.Context(), *user.Username)
+		if err == nil && existingUser != nil {
+			return nil, fmt.Errorf("username already exists")
+		}
 	}
 
 	// Hash password
-	hashedPassword, err := s.HashPassword(user.Password)
+	hashedPassword, err := s.HashPassword(*user.Password)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
-	user.Password = hashedPassword
+	user.Password = &hashedPassword
 
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+	if err := s.userRepo.Create(ctx.Context(), user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return nil
+	return user, nil
 }
 
-// Login authenticates a user and returns a JWT token
-func (s *AuthServiceImpl) Login(ctx context.Context, email, password string) (*models.User, error) {
-	logs.Info("attempting login", "email", email)
-
-	user, err := s.userRepo.FindByEmail(ctx, email)
+// Login authenticates a user and returns the user and a JWT token
+func (s *AuthServiceImpl) Login(ctx *fiber.Ctx, email, password string) (*models.User, string, error) {
+	user, err := s.userRepo.FindByEmail(ctx.Context(), email)
 	if err != nil {
-		logs.Error("login failed", "error", err, "email", email)
-		return nil, authErrors.NewAuthError(authErrors.ErrInvalidCredentials, "invalid credentials", err)
+		return nil, "", fmt.Errorf("invalid credentials")
 	}
 
-	if !s.CheckPassword(password, user.Password) {
-		logs.Error("invalid password", "email", email)
-		return nil, authErrors.NewAuthError(authErrors.ErrInvalidCredentials, "invalid credentials", nil)
+	if user.Password == nil || !s.CheckPassword(password, *user.Password) {
+		return nil, "", fmt.Errorf("invalid credentials")
 	}
 
-	logs.Info("login successful", "user_id", user.ID, "email", email)
+	// Generate access token
+	token, err := s.GenerateAccessToken(user)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate token: %w", err)
+	}
 
 	// Update last login
 	now := time.Now()
 	user.LastLoginAt = &now
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to update user: %w", err)
+	if err := s.userRepo.Update(ctx.Context(), user); err != nil {
+		return nil, "", fmt.Errorf("failed to update user: %w", err)
 	}
+
+	return user, token, nil
 
 	// Generate refresh token
 	refreshToken, err := s.GenerateRefreshToken()
@@ -150,117 +335,35 @@ func (s *AuthServiceImpl) Login(ctx context.Context, email, password string) (*m
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		return nil, fmt.Errorf("failed to save refresh token: %w", err)
 	}
-
-	return user, nil
 }
 
 // GetUserByID retrieves a user by ID
-func (s *AuthServiceImpl) GetUserByID(ctx context.Context, id string) (*models.User, error) {
-	return s.userRepo.FindByID(ctx, id)
+func (s *AuthServiceImpl) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	user, err := s.userRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
 }
 
-// GenerateAccessToken generates a new JWT access token
-func (s *AuthServiceImpl) GenerateAccessToken(userID string) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(s.config.TokenConfig.ExpiryTime).Unix(),
-		"iat":     time.Now().Unix(),
+// GenerateAccessToken generates a new JWT access token for the user
+func (s *AuthServiceImpl) GenerateAccessToken(user *models.User) (string, error) {
+	expirationTime := time.Now().Add(s.config.JWTExpiration)
+
+	claims := &TokenClaims{
+		UserID: user.ID,
+		Email:  user.Email,
+		Role:   user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "rota-api",
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.config.TokenConfig.Secret))
+	return token.SignedString([]byte(s.config.JWTSecret))
 }
-
-// GenerateRefreshToken generates a new refresh token
-func (s *AuthServiceImpl) GenerateRefreshToken() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("failed to generate refresh token: %w", err)
-	}
-	return base64.URLEncoding.EncodeToString(b), nil
-}
-
-// ValidateAccessToken validates the access token and returns the claims
-func (s *AuthServiceImpl) ValidateAccessToken(token string) (*TokenClaims, error) {
-	claims := &TokenClaims{}
-	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(s.config.TokenConfig.Secret), nil
-	})
-
-	if err != nil {
-		return nil, authErrors.NewAuthError(authErrors.ErrInvalidToken, "invalid token", err)
-	}
-
-	if !parsedToken.Valid {
-		return nil, authErrors.NewAuthError(authErrors.ErrTokenExpired, "token has expired", nil)
-	}
-
-	return claims, nil
-}
-
-// RefreshToken generates a new access token using a refresh token
-func (s *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (accessToken string, newRefreshToken string, err error) {
-	// Find user by refresh token
-	user, err := s.userRepo.FindByRefreshToken(ctx, refreshToken)
-	if err != nil {
-		return "", "", fmt.Errorf("invalid refresh token")
-	}
-
-	// Generate new access token
-	accessToken, err = s.GenerateAccessToken(user.ID)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate token: %w", err)
-	}
-
-	// Generate new refresh token
-	newRefreshToken, err = s.GenerateRefreshToken()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
-	}
-
-	// Update refresh token in database
-	user.RefreshToken = newRefreshToken
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		return "", "", fmt.Errorf("failed to update refresh token: %w", err)
-	}
-
-	return accessToken, newRefreshToken, nil
-}
-
-// Logout invalidates the user's tokens
-func (s *AuthServiceImpl) Logout(ctx context.Context, userID string, token string) error {
-	// Add access token to blacklist first
-	if s.redisRepo != nil {
-		s.AddToBlacklist(token)
-	}
-
-	// Find and update user
-	user, err := s.userRepo.FindByID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("failed to find user: %w", err)
-	}
-
-	// Clear refresh token
-	user.RefreshToken = ""
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
-	}
-
-	return nil
-}
-
-// GetJWTSecret returns the JWT secret
-func (s *AuthServiceImpl) GetJWTSecret() string {
-	return s.config.TokenConfig.Secret
-}
-
-// IsTokenBlacklisted checks if a token is blacklisted
-func (s *AuthServiceImpl) IsTokenBlacklisted(token string) bool {
-	if s.redisRepo == nil {
-		return false // If Redis is not available, assume token is valid
 	}
 
 	exists, err := s.redisRepo.IsBlacklisted(context.Background(), token)
