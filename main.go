@@ -40,7 +40,7 @@ func main() {
 	}
 
 	// Initialize Redis (optional)
-	var redisRepo *repositories.RedisRepository
+	var redisRepo repositories.RedisRepository
 	if cfg.Redis.Host != "" {
 		redisClient := redis.NewClient(&redis.Options{
 			Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
@@ -82,6 +82,8 @@ func main() {
 
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)
+	routeRepo := repositories.NewRouteRepository(db)
+	stationRepo := repositories.NewStationRepository(db)
 
 	// Initialize services
 	authConfig := services.AuthConfig{
@@ -103,8 +105,14 @@ func main() {
 		authConfig,
 	)
 
+	// Initialize services
+	routeService := services.NewRouteService(routeRepo)
+	// Note: stationService is available but not used for now
+	_ = services.NewStationService(stationRepo)
+
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
+	routeHandler := handler.NewRouteHandler(routeService)
 
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
@@ -121,6 +129,7 @@ func main() {
 
 	// Routes
 	routes.SetupAuthRoutes(app, authHandler, authService)
+	routes.SetupRouteRoutes(app, routeHandler, authService)
 
 	// Start server
 	log.Printf("Server starting on :%s", cfg.ServerPort)
@@ -128,32 +137,3 @@ func main() {
 		log.Fatalf("Server error: %v", err)
 	}
 }
-
-// import (
-// 	"rota-api/bookmark"
-// 	"rota-api/database"
-
-// 	"github.com/gofiber/fiber/v2"
-// )
-
-// func main() {
-// 	app := fiber.New()
-// 	dbErr := database.InitDatabase()
-
-// 	if dbErr != nil {
-// 		panic(dbErr)
-// 	}
-
-// 	setupRoutes(app)
-// 	app.Listen(":3000")
-// }
-
-// func status(c *fiber.Ctx) error {
-// 	return c.SendString("Server is running! Send your request")
-// }
-
-// func setupRoutes(app *fiber.App) {
-// 	app.Get("/", status)
-// 	app.Get("/bookmark", bookmark.GetAllBookmarks)
-// 	app.Post("/bookmark", bookmark.SaveBookmark)
-// }

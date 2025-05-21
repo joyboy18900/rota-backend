@@ -47,7 +47,7 @@ func (s *userService) UpdateUser(ctx context.Context, id string, username, email
 
 	// Update fields if provided
 	if username != "" {
-		user.Username = username
+		user.Username = &username
 	}
 	if email != "" {
 		user.Email = email
@@ -57,7 +57,8 @@ func (s *userService) UpdateUser(ctx context.Context, id string, username, email
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash password: %w", err)
 		}
-		user.Password = string(hashedPassword)
+		hashedPwdStr := string(hashedPassword)
+		user.Password = &hashedPwdStr
 	}
 
 	if err := s.userRepo.Update(ctx, user); err != nil {

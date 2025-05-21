@@ -164,7 +164,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Generate refresh token with expiration
-	expiresIn := int(h.authService.(*services.AuthServiceImpl).Config.JWTExpiration.Seconds())
+	expiresIn := int(h.authService.GetJWTExpiration().Seconds())
 	
 	// Generate access token with expiration claim
 	token, err = h.authService.GenerateAccessToken(user)
@@ -179,7 +179,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// TODO: Store refresh token in database with user ID and expiration
-	// if err := h.tokenRepo.StoreRefreshToken(user.ID, refreshToken, h.authService.(*services.AuthServiceImpl).Config.RefreshExpiration); err != nil {
+	// if err := h.tokenRepo.StoreRefreshToken(user.ID, refreshToken, h.authService.GetRefreshExpiration()); err != nil {
 	// 	return response.InternalServerError(c, "Failed to store refresh token")
 	// }
 
@@ -283,7 +283,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 
 
 	// Store new refresh token
-	// if err := h.tokenRepo.StoreRefreshToken(user.ID, newRefreshToken, h.authService.(*services.AuthServiceImpl).Config.RefreshExpiration); err != nil {
+	// if err := h.tokenRepo.StoreRefreshToken(user.ID, newRefreshToken, h.authService.GetRefreshExpiration()); err != nil {
 	// 	return response.InternalServerError(c, "Failed to store refresh token")
 	// }
 
@@ -293,7 +293,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		AccessToken:  "new_access_token", // Replace with actual token
 		RefreshToken: "new_refresh_token", // Replace with actual refresh token
 		TokenType:    "Bearer",
-		ExpiresIn:    int(h.authService.(*services.AuthServiceImpl).Config.JWTExpiration.Seconds()),
+		ExpiresIn:    int(h.authService.GetJWTExpiration().Seconds()),
 	}, "Token refreshed successfully")
 }
 

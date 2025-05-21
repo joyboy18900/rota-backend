@@ -27,6 +27,7 @@ type User struct {
 	ProfilePicture *string    `json:"profilePicture,omitempty" gorm:"type:text"`
 	IsVerified     bool       `json:"isVerified" gorm:"not null;default:false"`
 	Role           UserRole   `json:"role" gorm:"type:varchar(20);not null;default:'user'"`
+	LastLoginAt    *time.Time `json:"lastLoginAt" gorm:"default:null"`
 	CreatedAt      time.Time  `json:"createdAt" gorm:"not null;default:now()"`
 	UpdatedAt      time.Time  `json:"updatedAt" gorm:"not null;default:now()"`
 }
@@ -76,13 +77,13 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 
 // BeforeUpdate is a hook that runs before updating a user
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
-	if tx.Statement.Changed("Password") {
+	if tx.Statement.Changed("Password") && u.Password != nil {
 		// Hash password before updating
-		hashedPassword, err := HashPassword(u.Password)
+		hashedPassword, err := HashPassword(*u.Password)
 		if err != nil {
 			return err
 		}
-		u.Password = hashedPassword
+		u.Password = &hashedPassword
 	}
 	return nil
 }

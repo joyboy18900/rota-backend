@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Dependency directories
+vendor/
+node_modules/
+
+# Build output
+bin/
+dist/
+
+# Test files
+*_test.go
+
+# Local development
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Air temp files
+.air.toml
+.air.toml.tmp
+
+# Other
+README.md
+LICENSE

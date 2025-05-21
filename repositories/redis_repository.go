@@ -15,24 +15,31 @@ type RedisConfig struct {
 	DB       int
 }
 
-// RedisRepository handles Redis operations
-type RedisRepository struct {
+// RedisRepository defines the interface for Redis operations
+type RedisRepository interface {
+	// Token Blacklist methods
+	AddToBlacklist(ctx context.Context, token string, ttl time.Duration) error
+	IsBlacklisted(ctx context.Context, token string) (bool, error)
+}
+
+// redisRepositoryImpl implements RedisRepository
+type redisRepositoryImpl struct {
 	client *redis.Client
 }
 
 // NewRedisRepository creates a new Redis repository
-func NewRedisRepository(client *redis.Client) *RedisRepository {
-	return &RedisRepository{
+func NewRedisRepository(client *redis.Client) RedisRepository {
+	return &redisRepositoryImpl{
 		client: client,
 	}
 }
 
 // Token Blacklist methods
-func (r *RedisRepository) AddToBlacklist(ctx context.Context, token string, ttl time.Duration) error {
+func (r *redisRepositoryImpl) AddToBlacklist(ctx context.Context, token string, ttl time.Duration) error {
 	return r.client.Set(ctx, "blacklist:"+token, "1", ttl).Err()
 }
 
-func (r *RedisRepository) IsBlacklisted(ctx context.Context, token string) (bool, error) {
+func (r *redisRepositoryImpl) IsBlacklisted(ctx context.Context, token string) (bool, error) {
 	result, err := r.client.Exists(ctx, "blacklist:"+token).Result()
 	return result > 0, err
 }

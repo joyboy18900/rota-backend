@@ -10,7 +10,7 @@ import (
 
 // SetupAuthRoutes configures all auth routes
 func SetupAuthRoutes(app *fiber.App, handler *handler.AuthHandler, authService services.AuthService) {
-	auth := app.Group("/api/auth")
+	auth := app.Group("/api/v1/auth")
 
 	// Public routes
 	auth.Post("/register", handler.Register)

@@ -10,15 +10,15 @@ import (
 
 func SetupScheduleRoutes(
 	app *fiber.App,
-	scheduleHandler *handlers.ScheduleHandler,
+	scheduleHandler *handler.ScheduleHandler,
 	authService services.AuthService,
 ) {
-	scheduleGroup := app.Group("/api/schedules")
+	scheduleGroup := app.Group("/api/v1/schedules")
 	scheduleGroup.Use(middleware.AuthMiddleware(authService))
 
 	scheduleGroup.Post("/", scheduleHandler.CreateSchedule)
 	scheduleGroup.Get("/", scheduleHandler.GetAllSchedules)
 	scheduleGroup.Get("/:id", scheduleHandler.GetScheduleByID)
-	scheduleGroup.Put("/:id", scheduleHandler.UpdateScheduleByID)
-	scheduleGroup.Delete("/:id", scheduleHandler.DeleteScheduleByID)
+	scheduleGroup.Put("/:id", scheduleHandler.UpdateSchedule)
+	scheduleGroup.Delete("/:id", scheduleHandler.DeleteSchedule)
 }

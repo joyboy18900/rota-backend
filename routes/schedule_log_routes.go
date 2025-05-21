@@ -10,7 +10,7 @@ import (
 
 func SetupScheduleLogRoutes(
 	app *fiber.App,
-	scheduleLogHandler *handlers.ScheduleLogHandler,
+	scheduleLogHandler *handler.ScheduleLogHandler,
 	authService services.AuthService,
 ) {
 	scheduleLogGroup := app.Group("/api/schedule-logs")

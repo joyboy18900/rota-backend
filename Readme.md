@@ -1,54 +1,114 @@
-# Rota Backend
+# Rota API Backend (Go)
 
-This is the backend service for the Rota application.
+Backend service for the Rota application built with Go, Fiber, and PostgreSQL.
 
-## Getting Started
+## 🚀 Features
 
-### Prerequisites
+- 🔐 JWT Authentication
+- 🗄️ PostgreSQL Database
+- 🚀 High Performance with Fiber
+- 🔄 Redis for Token Management
+- 📝 API Documentation (Swagger)
+- 🔄 Database Migrations
 
-- Node.js
-- npm
+## 📋 Prerequisites
 
-### Installation
+- Go 1.20+
+- PostgreSQL 13+
+- Redis 6+
+- Make (optional)
+
+## 🛠️ Installation
 
 1. Clone the repository:
-  ```sh
-  git clone https://github.com/yourusername/rota-backend.git
-  ```
-2. Navigate to the project directory:
-  ```sh
-  cd rota-backend
-  ```
+   ```bash
+   git clone https://github.com/yourusername/rota-backend.git
+   cd rota-backend
+   ```
+
+2. Copy the environment file and update the values:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
 3. Install dependencies:
-  ```sh
-  npm install
-  ```
+   ```bash
+   go mod download
+   ```
 
-### Running the Application
+## 🚀 Running the Application
 
-To start the application, run:
-```sh
-npm start
+1. Start PostgreSQL and Redis services
+
+2. Run database migrations:
+   ```bash
+   make migrate-up
+   # or manually:
+   # migrate -path ./migrations -database "postgres://user:pass@localhost:5432/dbname?sslmode=disable" up
+   ```
+
+3. Start the application:
+   ```bash
+   go run main.go
+   # or with hot reload (install air first: go install github.com/cosmtrek/air@latest)
+   air
+   ```
+
+The server will start on `http://localhost:8080` by default.
+
+## 📚 API Documentation
+
+After starting the server, access the Swagger documentation at:
+- Swagger UI: http://localhost:8080/swagger/index.html
+- OpenAPI JSON: http://localhost:8080/swagger/doc.json
+
+## 🧪 Running Tests
+
+```bash
+# Run all tests
+go test -v ./...
+
+# Run tests with coverage
+go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
 ```
 
-### Running Tests
+## 🛠 Development
 
-To run tests, use:
-```sh
-npm test
+### Code Generation
+
+```bash
+# Generate mocks
+mockgen -source=path/to/interface.go -destination=mocks/interface_mock.go -package=mocks
 ```
 
-### Contributing
+### Linting
+
+```bash
+# Install golangci-lint if needed
+# https://golangci-lint.run/usage/install/
+
+golangci-lint run
+```
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### License
+## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
+## 🙏 Acknowledgments
+
+- [Fiber](https://gofiber.io/) - Web framework
+- [GORM](https://gorm.io/) - ORM library
+- [Swaggo](https://github.com/swaggo/swag) - API documentation
+- [Testify](https://github.com/stretchr/testify) - Testing toolkit
 
 ### Contact
 

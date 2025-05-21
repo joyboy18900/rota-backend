@@ -9,24 +9,28 @@ import (
 )
 
 // SetupRouteRoutes sets up all route-related routes
-func SetupRouteRoutes(app *fiber.App, routeHandler *handlers.RouteHandler, authService services.AuthService) {
-	routes := app.Group("/api/routes")
+func SetupRouteRoutes(app *fiber.App, routeHandler *handler.RouteHandler, authService services.AuthService) {
+	// Create public group for routes that don't need authentication
+	publicRoutes := app.Group("/api/v1/routes")
+	
+	// Public endpoints
+	publicRoutes.Get("/", routeHandler.GetAllRoutes)
 
-	// Apply auth middleware
-	routes.Use(middleware.AuthMiddleware(authService))
-
-	// Route endpoints
-	routes.Get("/", routeHandler.GetAllRoutes)
-	routes.Get("/:id", routeHandler.GetRoute)
-	routes.Post("/", routeHandler.CreateRoute)
-	routes.Put("/:id", routeHandler.UpdateRoute)
-	routes.Delete("/:id", routeHandler.DeleteRoute)
+	// Protected routes
+	protectedRoutes := app.Group("/api/v1/routes")
+	protectedRoutes.Use(middleware.AuthMiddleware(authService))
+	protectedRoutes.Get("/:id", routeHandler.GetRouteByID)
+	protectedRoutes.Post("/", routeHandler.CreateRoute)
+	protectedRoutes.Put("/:id", routeHandler.UpdateRoute)
+	protectedRoutes.Delete("/:id", routeHandler.DeleteRoute)
 
 	// Route-Stop relationship endpoints
-	routes.Post("/:id/stops", routeHandler.AddStops)
-	routes.Delete("/:id/stops", routeHandler.RemoveStops)
+	// TODO: Implement these methods in RouteHandler
+	// routes.Post("/:id/stops", routeHandler.AddStops)
+	// routes.Delete("/:id/stops", routeHandler.RemoveStops)
 
 	// Route-Vehicle relationship endpoints
-	routes.Post("/:id/vehicles", routeHandler.AddVehicles)
-	routes.Delete("/:id/vehicles", routeHandler.RemoveVehicles)
+	// TODO: Implement these methods in RouteHandler
+	// routes.Post("/:id/vehicles", routeHandler.AddVehicles)
+	// routes.Delete("/:id/vehicles", routeHandler.RemoveVehicles)
 }
