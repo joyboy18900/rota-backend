@@ -4,6 +4,7 @@ import (
 	"rota-api/models"
 	"rota-api/services"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -59,6 +60,31 @@ func (h *ScheduleLogHandler) CreateScheduleLog(c *fiber.Ctx) error {
 		})
 	}
 
+	// ตรวจสอบและกำหนดค่าเวลาที่ถูกต้อง
+	if c.Get("Content-Type") == "application/json" {
+		// ตรวจสอบฟิลด์เวลาจากคำขอ JSON
+		body := make(map[string]interface{})
+		if err := c.BodyParser(&body); err == nil {
+			// กำหนดค่า ActualDeparture หากมีในคำขอ
+			if _, ok := body["actual_departure"]; ok && body["actual_departure"] != "" {
+				if t, err := time.Parse(time.RFC3339, body["actual_departure"].(string)); err == nil {
+					scheduleLog.ActualDeparture = &t
+				}
+			}
+
+			// กำหนดค่า ActualArrival หากมีในคำขอ
+			if _, ok := body["actual_arrival"]; ok && body["actual_arrival"] != "" {
+				if t, err := time.Parse(time.RFC3339, body["actual_arrival"].(string)); err == nil {
+					scheduleLog.ActualArrival = &t
+				}
+			}
+		}
+	}
+
+	// กำหนดเวลาอัพเดท
+	now := time.Now()
+	scheduleLog.UpdatedAt = &now
+
 	if err := h.scheduleLogService.CreateScheduleLog(c.Context(), &scheduleLog); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -86,7 +112,32 @@ func (h *ScheduleLogHandler) UpdateScheduleLog(c *fiber.Ctx) error {
 		})
 	}
 
+	// ตรวจสอบและกำหนดค่าเวลาที่ถูกต้อง
+	if c.Get("Content-Type") == "application/json" {
+		// ตรวจสอบฟิลด์เวลาจากคำขอ JSON
+		body := make(map[string]interface{})
+		if err := c.BodyParser(&body); err == nil {
+			// กำหนดค่า ActualDeparture หากมีในคำขอ
+			if _, ok := body["actual_departure"]; ok && body["actual_departure"] != "" {
+				if t, err := time.Parse(time.RFC3339, body["actual_departure"].(string)); err == nil {
+					scheduleLog.ActualDeparture = &t
+				}
+			}
+
+			// กำหนดค่า ActualArrival หากมีในคำขอ
+			if _, ok := body["actual_arrival"]; ok && body["actual_arrival"] != "" {
+				if t, err := time.Parse(time.RFC3339, body["actual_arrival"].(string)); err == nil {
+					scheduleLog.ActualArrival = &t
+				}
+			}
+		}
+	}
+
+	// กำหนดเวลาอัพเดท
+	now := time.Now()
+	scheduleLog.UpdatedAt = &now
 	scheduleLog.ID = uint(id)
+
 	if err := h.scheduleLogService.UpdateScheduleLog(c.Context(), &scheduleLog); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

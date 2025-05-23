@@ -117,7 +117,7 @@ services:
     platform: linux/arm64
     container_name: rota-pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=rota.admin@localhost
+      - PGADMIN_DEFAULT_EMAIL=admin@rota.dev
       - PGADMIN_DEFAULT_PASSWORD=rota_pgadmin_dev
     ports:
       - "5050:80"

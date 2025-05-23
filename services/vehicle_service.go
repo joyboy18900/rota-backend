@@ -62,8 +62,8 @@ func (s *vehicleService) UpdateVehicle(ctx context.Context, vehicle *models.Vehi
 	// Update fields if provided
 	if vehicle.LicensePlate != "" && vehicle.LicensePlate != existingVehicle.LicensePlate {
 		// Check if license plate already exists
-		existingVehicle, err := s.vehicleRepo.FindByLicensePlate(ctx, vehicle.LicensePlate)
-		if err == nil && existingVehicle != nil && existingVehicle.ID != vehicle.ID {
+		vehicleWithSamePlate, err := s.vehicleRepo.FindByLicensePlate(ctx, vehicle.LicensePlate)
+		if err == nil && vehicleWithSamePlate != nil && vehicleWithSamePlate.ID != vehicle.ID {
 			return fmt.Errorf("vehicle with license plate %s already exists", vehicle.LicensePlate)
 		}
 		existingVehicle.LicensePlate = vehicle.LicensePlate

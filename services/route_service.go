@@ -48,9 +48,35 @@ func (s *routeService) GetAllRoutes(ctx context.Context) ([]*models.Route, error
 
 // UpdateRoute updates a route
 func (s *routeService) UpdateRoute(ctx context.Context, route *models.Route) error {
-	if err := s.routeRepo.Update(ctx, route); err != nil {
+	// ดึงข้อมูลเดิมก่อน
+	existingRoute, err := s.routeRepo.FindByID(ctx, route.ID)
+	if err != nil {
+		return fmt.Errorf("failed to find route: %w", err)
+	}
+
+	// อัพเดทเฉพาะฟิลด์ที่ระบุ
+	if route.StartStationID != 0 {
+		existingRoute.StartStationID = route.StartStationID
+	}
+	if route.EndStationID != 0 {
+		existingRoute.EndStationID = route.EndStationID
+	}
+	if route.Distance != 0 {
+		existingRoute.Distance = route.Distance
+	}
+	if route.Duration != "" {
+		existingRoute.Duration = route.Duration
+	}
+
+	// บันทึกการอัพเดท
+	err = s.routeRepo.Update(ctx, existingRoute)
+	if err != nil {
 		return fmt.Errorf("failed to update route: %w", err)
 	}
+	
+	// คัดลอกข้อมูลที่อัพเดทแล้วกลับไปยังพารามิเตอร์
+	*route = *existingRoute
+	
 	return nil
 }
 

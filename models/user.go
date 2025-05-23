@@ -26,8 +26,10 @@ type User struct {
 	ProviderID     *string    `json:"providerId,omitempty" gorm:"type:text"`
 	ProfilePicture *string    `json:"profilePicture,omitempty" gorm:"type:text"`
 	IsVerified     bool       `json:"isVerified" gorm:"not null;default:false"`
-	Role           UserRole   `json:"role" gorm:"type:varchar(20);not null;default:'user'"`
-	LastLoginAt    *time.Time `json:"lastLoginAt" gorm:"default:null"`
+	// Role field is commented out as it doesn't exist in the database
+	// Role           UserRole   `json:"role" gorm:"type:varchar(20);not null;default:'user'"`
+	// LastLoginAt field is commented out as it doesn't exist in the database
+	// LastLoginAt    *time.Time `json:"lastLoginAt" gorm:"default:null"`
 	CreatedAt      time.Time  `json:"createdAt" gorm:"not null;default:now()"`
 	UpdatedAt      time.Time  `json:"updatedAt" gorm:"not null;default:now()"`
 }
@@ -53,10 +55,10 @@ func (u *User) CheckPassword(password string) error {
 
 // BeforeCreate is a hook that runs before creating a user
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	// Set default role if not provided
-	if u.Role == "" {
-		u.Role = RoleUser
-	}
+	// Role field is removed from the model since it doesn't exist in the database
+	// if u.Role == "" {
+	// 	u.Role = RoleUser
+	// }
 	
 	// Hash password if provided
 	if u.Password != nil && *u.Password != "" {

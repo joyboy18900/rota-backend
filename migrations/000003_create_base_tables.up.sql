@@ -98,11 +98,7 @@ CREATE TABLE IF NOT EXISTS favorites (
 );
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS idx_stations_deleted_at ON stations(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_routes_deleted_at ON routes(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_vehicles_deleted_at ON vehicles(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_staff_deleted_at ON staff(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_schedules_deleted_at ON schedules(deleted_at);
+-- Removed deleted_at indexes as columns don't exist
 CREATE INDEX IF NOT EXISTS idx_route_stations_route_id ON route_stations(route_id);
 CREATE INDEX IF NOT EXISTS idx_route_stations_station_id ON route_stations(station_id);
 CREATE INDEX IF NOT EXISTS idx_route_vehicles_route_id ON route_vehicles(route_id);

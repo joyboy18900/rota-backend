@@ -35,6 +35,7 @@ vendor/
 *~
 .DS_Store
 .cursor
+.windsurf
 
 # Log files
 *.log

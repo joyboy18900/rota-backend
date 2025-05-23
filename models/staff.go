@@ -12,6 +12,9 @@ type Staff struct {
 	Username  string         `gorm:"unique;not null" json:"username"`
 	Password  string         `json:"-"` // Hide password in json responses
 	Email     string         `gorm:"unique;not null" json:"email"`
+	Name      string         `gorm:"not null" json:"name"`
+	Position  string         `json:"position"`
+	Phone     string         `json:"phone"`
 	StationID uint           `json:"station_id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

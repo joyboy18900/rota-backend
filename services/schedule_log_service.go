@@ -43,7 +43,45 @@ func (s *scheduleLogService) CreateScheduleLog(ctx context.Context, scheduleLog 
 
 // UpdateScheduleLog updates a schedule log
 func (s *scheduleLogService) UpdateScheduleLog(ctx context.Context, scheduleLog *models.ScheduleLog) error {
-	return s.scheduleLogRepo.Update(ctx, scheduleLog)
+	// ดึงข้อมูลเดิมก่อน
+	existingLog, err := s.scheduleLogRepo.FindByID(ctx, scheduleLog.ID)
+	if err != nil {
+		return err
+	}
+
+	// อัพเดทเฉพาะฟิลด์ที่ระบุ
+	if scheduleLog.ScheduleID != 0 {
+		existingLog.ScheduleID = scheduleLog.ScheduleID
+	}
+	if scheduleLog.StaffID != 0 {
+		existingLog.StaffID = scheduleLog.StaffID
+	}
+	if scheduleLog.ChangeDescription != "" {
+		existingLog.ChangeDescription = scheduleLog.ChangeDescription
+	}
+	if !scheduleLog.ActualDeparture.IsZero() {
+		existingLog.ActualDeparture = scheduleLog.ActualDeparture
+	}
+	if !scheduleLog.ActualArrival.IsZero() {
+		existingLog.ActualArrival = scheduleLog.ActualArrival
+	}
+	if scheduleLog.Status != "" {
+		existingLog.Status = scheduleLog.Status
+	}
+	if scheduleLog.Notes != "" {
+		existingLog.Notes = scheduleLog.Notes
+	}
+
+	// บันทึกการอัพเดท
+	err = s.scheduleLogRepo.Update(ctx, existingLog)
+	if err != nil {
+		return err
+	}
+
+	// คัดลอกข้อมูลที่อัพเดทแล้วกลับไปยังพารามิเตอร์
+	*scheduleLog = *existingLog
+
+	return nil
 }
 
 // DeleteScheduleLog deletes a schedule log

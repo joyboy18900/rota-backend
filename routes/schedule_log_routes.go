@@ -13,7 +13,7 @@ func SetupScheduleLogRoutes(
 	scheduleLogHandler *handler.ScheduleLogHandler,
 	authService services.AuthService,
 ) {
-	scheduleLogGroup := app.Group("/api/schedule-logs")
+	scheduleLogGroup := app.Group("/api/v1/schedule-logs")
 	scheduleLogGroup.Use(middleware.AuthMiddleware(authService))
 
 	scheduleLogGroup.Post("/", scheduleLogHandler.CreateScheduleLog)

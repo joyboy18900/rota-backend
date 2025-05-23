@@ -64,9 +64,9 @@ func LoadConfig() (*Config, error) {
 
 		DBHost:     getEnv("DB_HOST", "localhost"),
 		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "postgres"),
-		DBName:     getEnv("DB_NAME", "rota"),
+		DBUser:     getEnv("DB_USER", "rota_dev"),
+		DBPassword: getEnv("DB_PASSWORD", "rota_dev"),
+		DBName:     getEnv("DB_NAME", "rota_dev"),
 	}
 
 	// Load Redis configuration

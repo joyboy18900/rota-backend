@@ -85,6 +85,15 @@ func (s *staffService) UpdateStaff(ctx context.Context, staff *models.Staff) err
 	if staff.Email != "" {
 		existingStaff.Email = staff.Email
 	}
+	if staff.Name != "" {
+		existingStaff.Name = staff.Name
+	}
+	if staff.Position != "" {
+		existingStaff.Position = staff.Position
+	}
+	if staff.Phone != "" {
+		existingStaff.Phone = staff.Phone
+	}
 	if staff.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(staff.Password), bcrypt.DefaultCost)
 		if err != nil {
@@ -100,6 +109,9 @@ func (s *staffService) UpdateStaff(ctx context.Context, staff *models.Staff) err
 	if err := s.staffRepo.Update(ctx, existingStaff); err != nil {
 		return fmt.Errorf("failed to update staff: %w", err)
 	}
+
+	// คัดลอกข้อมูลทั้งหมดกลับไปที่พารามิเตอร์ที่ส่งเข้ามา
+	*staff = *existingStaff
 
 	return nil
 }

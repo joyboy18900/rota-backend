@@ -43,7 +43,45 @@ func (s *scheduleService) CreateSchedule(ctx context.Context, schedule *models.S
 
 // UpdateSchedule updates a schedule
 func (s *scheduleService) UpdateSchedule(ctx context.Context, schedule *models.Schedule) error {
-	return s.scheduleRepo.Update(ctx, schedule)
+	// ดึงข้อมูลเดิมก่อน
+	existingSchedule, err := s.scheduleRepo.FindByID(ctx, schedule.ID)
+	if err != nil {
+		return err
+	}
+
+	// อัพเดทเฉพาะฟิลด์ที่ระบุ
+	if schedule.RouteID != 0 {
+		existingSchedule.RouteID = schedule.RouteID
+	}
+	if schedule.VehicleID != 0 {
+		existingSchedule.VehicleID = schedule.VehicleID
+	}
+	if schedule.StationID != 0 {
+		existingSchedule.StationID = schedule.StationID
+	}
+	if schedule.Round != 0 {
+		existingSchedule.Round = schedule.Round
+	}
+	if !schedule.DepartureTime.IsZero() {
+		existingSchedule.DepartureTime = schedule.DepartureTime
+	}
+	if !schedule.ArrivalTime.IsZero() {
+		existingSchedule.ArrivalTime = schedule.ArrivalTime
+	}
+	if schedule.Status != "" {
+		existingSchedule.Status = schedule.Status
+	}
+
+	// บันทึกการอัพเดท
+	err = s.scheduleRepo.Update(ctx, existingSchedule)
+	if err != nil {
+		return err
+	}
+
+	// คัดลอกข้อมูลที่อัพเดทแล้วกลับไปยังพารามิเตอร์
+	*schedule = *existingSchedule
+
+	return nil
 }
 
 // DeleteSchedule deletes a schedule

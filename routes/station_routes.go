@@ -1,0 +1,26 @@
+package routes
+
+import (
+	"rota-api/handlers"
+	"rota-api/middleware"
+	"rota-api/services"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+// SetupStationRoutes sets up all station-related routes
+func SetupStationRoutes(app *fiber.App, stationHandler *handler.StationHandler, authService services.AuthService) {
+	// Create public group for routes that don't need authentication
+	publicRoutes := app.Group("/api/v1/stations")
+	
+	// Public endpoints
+	publicRoutes.Get("/", stationHandler.GetAllStations)
+
+	// Protected routes
+	protectedRoutes := app.Group("/api/v1/stations")
+	protectedRoutes.Use(middleware.AuthMiddleware(authService))
+	protectedRoutes.Get("/:id", stationHandler.GetStationByID)
+	protectedRoutes.Post("/", stationHandler.CreateStation)
+	protectedRoutes.Put("/:id", stationHandler.UpdateStation)
+	protectedRoutes.Delete("/:id", stationHandler.DeleteStation)
+}

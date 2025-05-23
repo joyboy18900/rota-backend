@@ -84,6 +84,11 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	routeRepo := repositories.NewRouteRepository(db)
 	stationRepo := repositories.NewStationRepository(db)
+	favoriteRepo := repositories.NewFavoriteRepository(db)
+	vehicleRepo := repositories.NewVehicleRepository(db)
+	scheduleRepo := repositories.NewScheduleRepository(db)
+	scheduleLogRepo := repositories.NewScheduleLogRepository(db)
+	staffRepo := repositories.NewStaffRepository(db)
 
 	// Initialize services
 	authConfig := services.AuthConfig{
@@ -107,12 +112,22 @@ func main() {
 
 	// Initialize services
 	routeService := services.NewRouteService(routeRepo)
-	// Note: stationService is available but not used for now
-	_ = services.NewStationService(stationRepo)
+	stationService := services.NewStationService(stationRepo)
+	favoriteService := services.NewFavoriteService(favoriteRepo)
+	vehicleService := services.NewVehicleService(vehicleRepo)
+	scheduleService := services.NewScheduleService(scheduleRepo)
+	scheduleLogService := services.NewScheduleLogService(scheduleLogRepo)
+	staffService := services.NewStaffService(staffRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
 	routeHandler := handler.NewRouteHandler(routeService)
+	stationHandler := handler.NewStationHandler(stationService)
+	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
+	vehicleHandler := handler.NewVehicleHandler(vehicleService)
+	scheduleHandler := handler.NewScheduleHandler(scheduleService)
+	scheduleLogHandler := handler.NewScheduleLogHandler(scheduleLogService)
+	staffHandler := handler.NewStaffHandler(staffService)
 
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
@@ -130,6 +145,13 @@ func main() {
 	// Routes
 	routes.SetupAuthRoutes(app, authHandler, authService)
 	routes.SetupRouteRoutes(app, routeHandler, authService)
+	routes.SetupStationRoutes(app, stationHandler, authService)
+	routes.SetupFavoriteRoutes(app, favoriteHandler, authService)
+	routes.SetupVehicleRoutes(app, vehicleHandler, authService)
+	routes.SetupScheduleRoutes(app, scheduleHandler, authService)
+	routes.SetupScheduleLogRoutes(app, scheduleLogHandler, authService)
+	// เพิ่ม routes สำหรับ staff
+	routes.SetupStaffRoutes(app, staffHandler, authService)
 
 	// Start server
 	log.Printf("Server starting on :%s", cfg.ServerPort)

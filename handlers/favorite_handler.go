@@ -3,6 +3,7 @@ package handler
 import (
 	"rota-api/models"
 	"rota-api/services"
+	"rota-api/utils"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,19 +22,15 @@ func NewFavoriteHandler(favoriteService services.FavoriteService) *FavoriteHandl
 func (h *FavoriteHandler) GetFavoriteByID(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid favorite ID",
-		})
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid favorite ID")
 	}
 
 	favorite, err := h.favoriteService.GetFavoriteByID(c.Context(), uint(id))
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Favorite not found",
-		})
+		return utils.ErrorResponse(c, fiber.StatusNotFound, "Favorite not found")
 	}
 
-	return c.JSON(fiber.Map{
+	return utils.SuccessResponse(c, fiber.StatusOK, "Favorite retrieved successfully", fiber.Map{
 		"favorite": favorite,
 	})
 }
