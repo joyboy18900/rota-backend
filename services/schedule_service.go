@@ -11,6 +11,7 @@ import (
 type ScheduleService interface {
 	GetScheduleByID(ctx context.Context, id uint) (*models.Schedule, error)
 	GetAllSchedules(ctx context.Context) ([]*models.Schedule, error)
+	SearchSchedules(ctx context.Context, params models.ScheduleSearchParams) (models.PagedResult, error)
 	CreateSchedule(ctx context.Context, schedule *models.Schedule) error
 	UpdateSchedule(ctx context.Context, schedule *models.Schedule) error
 	DeleteSchedule(ctx context.Context, id uint) error
@@ -82,6 +83,11 @@ func (s *scheduleService) UpdateSchedule(ctx context.Context, schedule *models.S
 	*schedule = *existingSchedule
 
 	return nil
+}
+
+// SearchSchedules searches for schedules with advanced filtering
+func (s *scheduleService) SearchSchedules(ctx context.Context, params models.ScheduleSearchParams) (models.PagedResult, error) {
+	return s.scheduleRepo.Search(ctx, params)
 }
 
 // DeleteSchedule deletes a schedule

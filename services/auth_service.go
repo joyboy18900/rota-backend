@@ -28,10 +28,9 @@ var (
 
 // TokenClaims represents the JWT claims for authentication
 type TokenClaims struct {
-	UserID int    `json:"user_id"`
-	Email  string `json:"email"`
-	// Role field is commented out as it doesn't exist in the database
-	// Role   models.UserRole `json:"role"`
+	UserID int             `json:"user_id"`
+	Email  string          `json:"email"`
+	Role   models.UserRole `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -194,18 +193,14 @@ func (s *AuthServiceImpl) Login(ctx *fiber.Ctx, email, password string) (*models
 
 // GenerateAccessToken generates a new JWT access token for the user
 func (s *AuthServiceImpl) GenerateAccessToken(user *models.User) (string, error) {
-	// Create token claims
-	claims := TokenClaims{
+	expiration := time.Now().Add(s.config.JWTExpiration)
+	claims := &TokenClaims{
 		UserID: user.ID,
 		Email:  user.Email,
-		// Role field is commented out as it doesn't exist in the database
-		// // Role field is commented out as it doesn't exist in the database
-		// Role:   user.Role,
+		Role:   user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.config.JWTExpiration)),
+			ExpiresAt: jwt.NewNumericDate(expiration),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "rota-api",
 		},
 	}
 
@@ -370,7 +365,7 @@ func (s *AuthServiceImpl) CreateUser(ctx context.Context, user *models.User) err
 
 // HashPassword returns the password as-is (no hashing for testing)
 func (s *AuthServiceImpl) HashPassword(password string) (string, error) {
-	log.Printf("HashPassword - Using plain password for testing: %s", password)
+	// Return the password as-is without hashing
 	return password, nil
 }
 

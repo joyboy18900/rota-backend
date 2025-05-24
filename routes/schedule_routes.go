@@ -16,6 +16,10 @@ func SetupScheduleRoutes(
 	scheduleGroup := app.Group("/api/v1/schedules")
 	scheduleGroup.Use(middleware.AuthMiddleware(authService))
 
+	// Advanced search endpoint - ต้องอยู่ก่อนเส้นทาง /:id เพื่อป้องกันการจับคู่ผิดพลาด
+	scheduleGroup.Get("/search", scheduleHandler.SearchSchedules)
+	
+	// CRUD operations
 	scheduleGroup.Post("/", scheduleHandler.CreateSchedule)
 	scheduleGroup.Get("/", scheduleHandler.GetAllSchedules)
 	scheduleGroup.Get("/:id", scheduleHandler.GetScheduleByID)

@@ -26,8 +26,7 @@ type User struct {
 	ProviderID     *string    `json:"providerId,omitempty" gorm:"type:text"`
 	ProfilePicture *string    `json:"profilePicture,omitempty" gorm:"type:text"`
 	IsVerified     bool       `json:"isVerified" gorm:"not null;default:false"`
-	// Role field is commented out as it doesn't exist in the database
-	// Role           UserRole   `json:"role" gorm:"type:varchar(20);not null;default:'user'"`
+	Role           UserRole   `json:"role" gorm:"type:varchar(20);not null;default:'user'"`
 	// LastLoginAt field is commented out as it doesn't exist in the database
 	// LastLoginAt    *time.Time `json:"lastLoginAt" gorm:"default:null"`
 	CreatedAt      time.Time  `json:"createdAt" gorm:"not null;default:now()"`
@@ -55,12 +54,13 @@ func (u *User) CheckPassword(password string) error {
 
 // BeforeCreate is a hook that runs before creating a user
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	// Role field is removed from the model since it doesn't exist in the database
-	// if u.Role == "" {
-	// 	u.Role = RoleUser
-	// }
+	// Set default role if not specified
+	if u.Role == "" {
+		u.Role = RoleUser
+	}
 	
-	// Hash password if provided
+	// Skip password hashing for plaintext comparison
+	/*
 	if u.Password != nil && *u.Password != "" {
 		hashedPassword, err := HashPassword(*u.Password)
 		if err != nil {
@@ -68,6 +68,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 		}
 		u.Password = &hashedPassword
 	}
+	*/
 	
 	// Set timestamps
 	now := time.Now()
@@ -79,6 +80,8 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 
 // BeforeUpdate is a hook that runs before updating a user
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
+	// Skip password hashing for plaintext comparison
+	/*
 	if tx.Statement.Changed("Password") && u.Password != nil {
 		// Hash password before updating
 		hashedPassword, err := HashPassword(*u.Password)
@@ -87,5 +90,6 @@ func (u *User) BeforeUpdate(tx *gorm.DB) error {
 		}
 		u.Password = &hashedPassword
 	}
+	*/
 	return nil
 }

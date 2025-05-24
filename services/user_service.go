@@ -12,10 +12,10 @@ import (
 
 // UserService interface defines methods for user service
 type UserService interface {
-	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetAllUsers(ctx context.Context) ([]*models.User, error)
-	UpdateUser(ctx context.Context, id string, username, email, password string) (*models.User, error)
-	DeleteUser(ctx context.Context, id string) error
+	UpdateUser(ctx context.Context, user *models.User) error
+	DeleteUser(ctx context.Context, id int) error
 }
 
 // userService implements UserService
@@ -29,8 +29,10 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 }
 
 // GetUserByID retrieves a user by ID
-func (s *userService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
-	return s.userRepo.FindByID(ctx, id)
+func (s *userService) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	// Convert int to string as repository expects string ID
+	strID := fmt.Sprintf("%d", id)
+	return s.userRepo.FindByID(ctx, strID)
 }
 
 // GetAllUsers retrieves all users
@@ -38,37 +40,28 @@ func (s *userService) GetAllUsers(ctx context.Context) ([]*models.User, error) {
 	return s.userRepo.FindAll(ctx)
 }
 
-// UpdateUser updates a user
-func (s *userService) UpdateUser(ctx context.Context, id string, username, email, password string) (*models.User, error) {
-	user, err := s.userRepo.FindByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find user: %w", err)
-	}
-
-	// Update fields if provided
-	if username != "" {
-		user.Username = &username
-	}
-	if email != "" {
-		user.Email = email
-	}
-	if password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+// UpdateUser updates a user with all provided fields
+func (s *userService) UpdateUser(ctx context.Context, user *models.User) error {
+	// Make sure password is hashed if it's provided
+	if user.Password != nil && *user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 		if err != nil {
-			return nil, fmt.Errorf("failed to hash password: %w", err)
+			return fmt.Errorf("failed to hash password: %w", err)
 		}
 		hashedPwdStr := string(hashedPassword)
 		user.Password = &hashedPwdStr
 	}
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to update user: %w", err)
+		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	return user, nil
+	return nil
 }
 
 // DeleteUser deletes a user
-func (s *userService) DeleteUser(ctx context.Context, id string) error {
-	return s.userRepo.Delete(ctx, id)
+func (s *userService) DeleteUser(ctx context.Context, id int) error {
+	// Convert int to string as repository expects string ID
+	strID := fmt.Sprintf("%d", id)
+	return s.userRepo.Delete(ctx, strID)
 }

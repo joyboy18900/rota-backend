@@ -111,6 +111,7 @@ func main() {
 	)
 
 	// Initialize services
+	userService := services.NewUserService(userRepo)
 	routeService := services.NewRouteService(routeRepo)
 	stationService := services.NewStationService(stationRepo)
 	favoriteService := services.NewFavoriteService(favoriteRepo)
@@ -121,6 +122,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService, authService)
 	routeHandler := handler.NewRouteHandler(routeService)
 	stationHandler := handler.NewStationHandler(stationService)
 	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
@@ -144,6 +146,7 @@ func main() {
 
 	// Routes
 	routes.SetupAuthRoutes(app, authHandler, authService)
+	routes.SetupUserRoutes(app, userHandler, authService)
 	routes.SetupRouteRoutes(app, routeHandler, authService)
 	routes.SetupStationRoutes(app, stationHandler, authService)
 	routes.SetupFavoriteRoutes(app, favoriteHandler, authService)

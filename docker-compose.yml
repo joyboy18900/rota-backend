@@ -47,8 +47,9 @@ services:
       - JWT_SECRET=dev-secret-key-change-this
       - JWT_ACCESS_TOKEN_TTL=24h
       - JWT_REFRESH_TOKEN_TTL=168h
-    ports:
-      - "3000:3000"
+    # ไม่ expose port 3000 ออกไปภายนอก เพื่อให้เข้าถึงได้เฉพาะผ่าน Kong
+    # ports:
+    #   - "3000:3000"
     volumes:
       - .:/app
     depends_on:
