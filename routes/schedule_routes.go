@@ -19,10 +19,14 @@ func SetupScheduleRoutes(
 	// Advanced search endpoint - ต้องอยู่ก่อนเส้นทาง /:id เพื่อป้องกันการจับคู่ผิดพลาด
 	scheduleGroup.Get("/search", scheduleHandler.SearchSchedules)
 	
-	// CRUD operations
-	scheduleGroup.Post("/", scheduleHandler.CreateSchedule)
+	// Read operations - accessible to all authenticated users
 	scheduleGroup.Get("/", scheduleHandler.GetAllSchedules)
 	scheduleGroup.Get("/:id", scheduleHandler.GetScheduleByID)
-	scheduleGroup.Put("/:id", scheduleHandler.UpdateSchedule)
-	scheduleGroup.Delete("/:id", scheduleHandler.DeleteSchedule)
+	
+	// Admin-only operations for schedule management
+	adminScheduleGroup := app.Group("/api/v1/schedules")
+	adminScheduleGroup.Use(middleware.AuthMiddleware(authService), middleware.AdminMiddleware())
+	adminScheduleGroup.Post("/", scheduleHandler.CreateSchedule)
+	adminScheduleGroup.Put("/:id", scheduleHandler.UpdateSchedule)
+	adminScheduleGroup.Delete("/:id", scheduleHandler.DeleteSchedule)
 }

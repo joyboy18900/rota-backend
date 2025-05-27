@@ -24,6 +24,6 @@ func SetupUserRoutes(
 	userGroup.Put("/:id/role", middleware.AdminMiddleware(), userHandler.UpdateUserRole)
 
 	// Routes for users to manage their own profile or for admins
-	userGroup.Get("/:id", userHandler.GetUserByID)
-	userGroup.Put("/:id", userHandler.UpdateUser)
+	userGroup.Get("/:id", middleware.OwnResourceMiddleware(), userHandler.GetUserByID)
+	userGroup.Put("/:id", middleware.OwnResourceMiddleware(), userHandler.UpdateUser)
 }

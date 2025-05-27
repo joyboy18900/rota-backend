@@ -16,13 +16,15 @@ func SetupVehicleRoutes(
 ) {
 	vehicles := app.Group("/api/v1/vehicles")
 
-	// Apply auth middleware
+	// Routes for viewing vehicles (available to all authenticated users)
 	vehicles.Use(middleware.AuthMiddleware(authService))
-
-	// Vehicle endpoints
 	vehicles.Get("/", vehicleHandler.GetAllVehicles)
 	vehicles.Get("/:id", vehicleHandler.GetVehicleByID)
-	vehicles.Post("/", vehicleHandler.CreateVehicle)
-	vehicles.Put("/:id", vehicleHandler.UpdateVehicle)
-	vehicles.Delete("/:id", vehicleHandler.DeleteVehicle)
+
+	// Admin-only routes for vehicle management
+	adminVehicles := app.Group("/api/v1/vehicles")
+	adminVehicles.Use(middleware.AuthMiddleware(authService), middleware.AdminMiddleware())
+	adminVehicles.Post("/", vehicleHandler.CreateVehicle)
+	adminVehicles.Put("/:id", vehicleHandler.UpdateVehicle)
+	adminVehicles.Delete("/:id", vehicleHandler.DeleteVehicle)
 }

@@ -16,9 +16,14 @@ func SetupScheduleLogRoutes(
 	scheduleLogGroup := app.Group("/api/v1/schedule-logs")
 	scheduleLogGroup.Use(middleware.AuthMiddleware(authService))
 
-	scheduleLogGroup.Post("/", scheduleLogHandler.CreateScheduleLog)
+	// Read operations - accessible to all authenticated users
 	scheduleLogGroup.Get("/", scheduleLogHandler.GetAllScheduleLogs)
 	scheduleLogGroup.Get("/:id", scheduleLogHandler.GetScheduleLogByID)
-	scheduleLogGroup.Put("/:id", scheduleLogHandler.UpdateScheduleLog)
-	scheduleLogGroup.Delete("/:id", scheduleLogHandler.DeleteScheduleLog)
+	
+	// Admin-only operations for schedule log management
+	adminScheduleLogGroup := app.Group("/api/v1/schedule-logs")
+	adminScheduleLogGroup.Use(middleware.AuthMiddleware(authService), middleware.AdminMiddleware())
+	adminScheduleLogGroup.Post("/", scheduleLogHandler.CreateScheduleLog)
+	adminScheduleLogGroup.Put("/:id", scheduleLogHandler.UpdateScheduleLog)
+	adminScheduleLogGroup.Delete("/:id", scheduleLogHandler.DeleteScheduleLog)
 }

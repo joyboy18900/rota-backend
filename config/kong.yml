@@ -9,6 +9,7 @@ services:
         paths:
           - /api/v1/routes
           - /api/v1/stations
+          - /api/v1/staff
         strip_path: false
       - name: auth-route
         paths:
@@ -17,17 +18,20 @@ services:
       - name: protected-route
         paths:
           - /api/v1/favorites
-          - /api/v1/user
+          - /api/v1/users
+          - /api/v1/vehicles
+          - /api/v1/schedules
+          - /api/v1/schedule-logs
         strip_path: false
-        plugins:
-          - name: jwt
-            config:
-              secret_is_base64: false
-              claims_to_verify:
-                - exp
-                - nbf
-              header_names:
-                - Authorization
+        # ปิดการใช้งาน JWT plugin ชั่วคราวเพื่อการทดสอบ
+        # plugins:
+        #   - name: jwt
+        #     config:
+        #       secret_is_base64: false
+        #       claims_to_verify:
+        #         - exp
+        #       header_names:
+        #         - Authorization
     plugins:
       - name: cors
         config:

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"rota-api/models"
 	"rota-api/services"
 	"rota-api/utils"
@@ -49,16 +50,36 @@ func (h *FavoriteHandler) GetAllFavorites(c *fiber.Ctx) error {
 }
 
 func (h *FavoriteHandler) CreateFavorite(c *fiber.Ctx) error {
+	// Parse request body
 	var favorite models.Favorite
 	if err := c.BodyParser(&favorite); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
+			"success": false,
+			"message": "Invalid request body",
 		})
 	}
 
+	// Get user ID and role from context (set by AuthMiddleware)
+	userID, _ := c.Locals("userID").(int)
+	userRole := c.Locals("userRole")
+
+	// Log values for debugging
+	fmt.Printf("CreateFavorite - userID from context: %v (type: %T), favorite.UserID: %v (type: %T)\n", 
+		userID, userID, favorite.UserID, favorite.UserID)
+
+	// Security check: ensure user can only create favorites for themselves unless they're an admin
+	if userRole != models.RoleAdmin && int(favorite.UserID) != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "forbidden: you can only create favorites for your own account",
+		})
+	}
+
+	// Create favorite
 	if err := h.favoriteService.CreateFavorite(c.Context(), &favorite); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
+			"success": false,
+			"message": err.Error(),
 		})
 	}
 

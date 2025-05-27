@@ -16,11 +16,15 @@ func SetupStationRoutes(app *fiber.App, stationHandler *handler.StationHandler, 
 	// Public endpoints
 	publicRoutes.Get("/", stationHandler.GetAllStations)
 
-	// Protected routes
+	// Protected routes for viewing
 	protectedRoutes := app.Group("/api/v1/stations")
 	protectedRoutes.Use(middleware.AuthMiddleware(authService))
 	protectedRoutes.Get("/:id", stationHandler.GetStationByID)
-	protectedRoutes.Post("/", stationHandler.CreateStation)
-	protectedRoutes.Put("/:id", stationHandler.UpdateStation)
-	protectedRoutes.Delete("/:id", stationHandler.DeleteStation)
+	
+	// Admin-only routes for station management
+	adminRoutes := app.Group("/api/v1/stations")
+	adminRoutes.Use(middleware.AuthMiddleware(authService), middleware.AdminMiddleware())
+	adminRoutes.Post("/", stationHandler.CreateStation)
+	adminRoutes.Put("/:id", stationHandler.UpdateStation)
+	adminRoutes.Delete("/:id", stationHandler.DeleteStation)
 }

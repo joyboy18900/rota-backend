@@ -16,13 +16,17 @@ func SetupRouteRoutes(app *fiber.App, routeHandler *handler.RouteHandler, authSe
 	// Public endpoints
 	publicRoutes.Get("/", routeHandler.GetAllRoutes)
 
-	// Protected routes
+	// Protected routes for viewing
 	protectedRoutes := app.Group("/api/v1/routes")
 	protectedRoutes.Use(middleware.AuthMiddleware(authService))
 	protectedRoutes.Get("/:id", routeHandler.GetRouteByID)
-	protectedRoutes.Post("/", routeHandler.CreateRoute)
-	protectedRoutes.Put("/:id", routeHandler.UpdateRoute)
-	protectedRoutes.Delete("/:id", routeHandler.DeleteRoute)
+	
+	// Admin-only routes for route management
+	adminRoutes := app.Group("/api/v1/routes")
+	adminRoutes.Use(middleware.AuthMiddleware(authService), middleware.AdminMiddleware())
+	adminRoutes.Post("/", routeHandler.CreateRoute)
+	adminRoutes.Put("/:id", routeHandler.UpdateRoute)
+	adminRoutes.Delete("/:id", routeHandler.DeleteRoute)
 
 	// Route-Stop relationship endpoints
 	// TODO: Implement these methods in RouteHandler

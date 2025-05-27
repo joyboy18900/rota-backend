@@ -59,7 +59,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Environment:     env,
 		ServerPort:      getEnv("SERVER_PORT", "3000"),
-		JWTSecret:       getEnv("JWT_SECRET", "your-jwt-secret-key"),
+		JWTSecret:       getEnv("JWT_SECRET", "dev-secret-key-change-this"),
 		TokenExpiration: getEnvAsInt("TOKEN_EXPIRATION", 24),
 
 		DBHost:     getEnv("DB_HOST", "localhost"),
@@ -76,7 +76,7 @@ func LoadConfig() (*Config, error) {
 	cfg.Redis.DB = getEnvAsInt("REDIS_DB", 0)
 
 	// Load JWT configuration
-	cfg.JWT.Secret = getEnv("JWT_SECRET", "your-secret-key")
+	cfg.JWT.Secret = getEnv("JWT_SECRET", "dev-secret-key-change-this")
 	cfg.JWT.AccessTokenTTL, _ = time.ParseDuration(getEnv("JWT_ACCESS_TOKEN_TTL", "24h"))
 	cfg.JWT.RefreshTokenTTL, _ = time.ParseDuration(getEnv("JWT_REFRESH_TOKEN_TTL", "168h"))
 
