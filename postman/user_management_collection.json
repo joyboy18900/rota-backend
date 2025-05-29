@@ -1,0 +1,173 @@
+{
+  "info": {
+    "name": "1. User Management",
+    "description": "API endpoints for managing users - most require admin privileges",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Users (Admin Only)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users"]
+        },
+        "description": "Get all users (requires admin role)"
+      }
+    },
+    {
+      "name": "Get User by ID (Admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users", "2"]
+        },
+        "description": "Get another user's data using admin privileges"
+      }
+    },
+    {
+      "name": "Get Own User (User)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users", "2"]
+        },
+        "description": "Get own user data (ID should match the logged in user)"
+      }
+    },
+    {
+      "name": "Create User (Admin Only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"newuser\",\n    \"email\": \"newcreated@example.com\",\n    \"password\": \"password\",\n    \"role\": \"user\",\n    \"name\": \"New Created User\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users"]
+        },
+        "description": "Create new user (requires admin role)"
+      }
+    },
+    {
+      "name": "Update User (Admin)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"updatedbyAdmin\",\n    \"name\": \"Updated By Admin\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users", "2"]
+        },
+        "description": "Update another user as admin"
+      }
+    },
+    {
+      "name": "Update Own User (User)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Updated Own Profile\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users", "2"]
+        },
+        "description": "Update own profile (ID should match the logged in user)"
+      }
+    },
+    {
+      "name": "Delete User (Admin Only)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/users/3",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "users", "3"]
+        },
+        "description": "Delete a user (requires admin role)"
+      }
+    }
+  ]
+}

@@ -44,6 +44,14 @@ func AuthMiddleware(authService services.AuthService) fiber.Handler {
 		
 		// Extract token
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// ตรวจสอบว่า token อยู่ใน blacklist หรือไม่
+		if authService.IsTokenBlacklisted(tokenString) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"success": false,
+				"message": "Token has been invalidated, please login again",
+			})
+		}
 		
 		// Try parsing and validating token through the service
 		claims, err := authService.ValidateAccessToken(tokenString)

@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "5. Vehicle Management",
+    "description": "API endpoints for managing vehicles",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Vehicles (Public)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/vehicles",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "vehicles"]
+        },
+        "description": "Get all vehicles (accessible by any authenticated user)"
+      }
+    },
+    {
+      "name": "Get Vehicle by ID (Public)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/vehicles/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "vehicles", "1"]
+        },
+        "description": "Get vehicle details by ID (accessible by any authenticated user)"
+      }
+    },
+    {
+      "name": "Create Vehicle (Admin Only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"license_plate\": \"กข-1234\",\n    \"capacity\": 30,\n    \"driver_name\": \"คนขับรถ\",\n    \"route_id\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/vehicles",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "vehicles"]
+        },
+        "description": "Create a new vehicle (requires admin role)"
+      }
+    },
+    {
+      "name": "Update Vehicle (Admin Only)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"license_plate\": \"กข-5678\",\n    \"capacity\": 35,\n    \"driver_name\": \"คนขับรถที่อัพเดท\",\n    \"route_id\": 2\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/vehicles/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "vehicles", "1"]
+        },
+        "description": "Update an existing vehicle (requires admin role)"
+      }
+    },
+    {
+      "name": "Delete Vehicle (Admin Only)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/vehicles/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "vehicles", "2"]
+        },
+        "description": "Delete a vehicle (requires admin role)"
+      }
+    }
+  ]
+}

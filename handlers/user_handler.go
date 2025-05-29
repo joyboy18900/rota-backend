@@ -154,8 +154,17 @@ func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
 
 // CreateUser creates a new user (admin only)
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	var newUser models.User
-	if err := c.BodyParser(&newUser); err != nil {
+	// ใช้ struct ชั่วคราวเพื่อรับข้อมูลจาก request
+	type CreateUserRequest struct {
+		Username string          `json:"username"`
+		Email    string          `json:"email"`
+		Password string          `json:"password"`
+		Role     models.UserRole `json:"role"`
+		Name     string          `json:"name"`
+	}
+
+	var req CreateUserRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid request data",
@@ -164,23 +173,32 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Validate required fields
-	if newUser.Email == "" {
+	if req.Email == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Email is required",
 		})
 	}
 
-	if newUser.Password == nil || *newUser.Password == "" {
+	if req.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Password is required",
 		})
 	}
 
+	// สร้าง User จากข้อมูลใน request
+	var newUser models.User
+	newUser.Email = req.Email
+	newUser.Username = &req.Username
+	password := req.Password
+	newUser.Password = &password
+
 	// Set default role if not provided
-	if newUser.Role == "" {
+	if req.Role == "" {
 		newUser.Role = models.RoleUser
+	} else {
+		newUser.Role = req.Role
 	}
 
 	// Register the user through auth service
