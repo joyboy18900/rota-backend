@@ -16,6 +16,8 @@ type ScheduleRepository interface {
 	Create(ctx context.Context, schedule *models.Schedule) error
 	Update(ctx context.Context, schedule *models.Schedule) error
 	Delete(ctx context.Context, id uint) error
+	FindSchedulesByStation(ctx context.Context, stationID uint, limit int) (models.StationSchedulesResponse, error)
+	FindSimpleSchedulesByStation(ctx context.Context, stationID uint) (*models.SimpleStationScheduleResponse, error)
 }
 
 // scheduleRepository implements ScheduleRepository
@@ -158,4 +160,150 @@ func (r *scheduleRepository) Search(ctx context.Context, params models.ScheduleS
 
 func (r *scheduleRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&models.Schedule{}, id).Error
+}
+
+// FindSchedulesByStation returns both inbound and outbound schedules for a specific station
+// with detailed station information and limited to a specific number of schedules per direction
+// limit parameter specifies how many schedules to return for EACH direction (e.g., limit=10 means 10 outbound + 10 inbound)
+func (r *scheduleRepository) FindSchedulesByStation(ctx context.Context, stationID uint, limit int) (models.StationSchedulesResponse, error) {
+	var response models.StationSchedulesResponse
+	
+	// Get station details
+	var station models.Station
+	if err := r.db.WithContext(ctx).First(&station, stationID).Error; err != nil {
+		return response, err
+	}
+	response.Station = station
+
+	// Find all routes where this station is either start or end
+	var routeIDs []uint
+	if err := r.db.WithContext(ctx).
+		Model(&models.Route{}).
+		Where("start_station_id = ? OR end_station_id = ?", stationID, stationID).
+		Pluck("id", &routeIDs).Error; err != nil {
+		return response, err
+	}
+
+	// Get outbound schedules (from this station to others)
+	var outboundSchedules []*models.Schedule
+	outboundQuery := r.db.WithContext(ctx).
+		Preload("Route").
+		Preload("Route.StartStation").
+		Preload("Route.EndStation").
+		Preload("Vehicle").
+		Preload("Station").
+		Where("station_id = ?", stationID).
+		Where("route_id IN ?", routeIDs).
+		Order("departure_time asc").
+		Limit(limit)
+
+	if err := outboundQuery.Find(&outboundSchedules).Error; err != nil {
+		return response, err
+	}
+
+	// Get inbound schedules (from others to this station)
+	var inboundSchedules []*models.Schedule
+	// First get routes where this station is the end station
+	var inboundRouteIDs []uint
+	if err := r.db.WithContext(ctx).
+		Model(&models.Route{}).
+		Where("end_station_id = ?", stationID).
+		Pluck("id", &inboundRouteIDs).Error; err != nil {
+		return response, err
+	}
+
+	// Then get schedules for those routes, where the station is the end station's paired station
+	inboundQuery := r.db.WithContext(ctx).
+		Preload("Route").
+		Preload("Route.StartStation").
+		Preload("Route.EndStation").
+		Preload("Vehicle").
+		Preload("Station").
+		Where("route_id IN ?", inboundRouteIDs).
+		Order("departure_time asc").
+		Limit(limit)
+
+	if err := inboundQuery.Find(&inboundSchedules).Error; err != nil {
+		return response, err
+	}
+
+	response.OutboundSchedules = outboundSchedules
+	response.InboundSchedules = inboundSchedules
+
+	// Add station details (example description)
+	response.StationDetails = "สถานีขนส่งผู้โดยสารสถานี" + station.Name + " ให้บริการเดินรถระหว่างเมือง ตั้งอยู่ที่ " + station.Location
+
+	return response, nil
+}
+
+// FindSimpleSchedulesByStation returns a simplified version of schedules for a station
+// with only departure times and destinations, limited to 10 schedules in each direction
+func (r *scheduleRepository) FindSimpleSchedulesByStation(ctx context.Context, stationID uint) (*models.SimpleStationScheduleResponse, error) {
+	response := &models.SimpleStationScheduleResponse{}
+	
+	// Get station details
+	var station models.Station
+	if err := r.db.WithContext(ctx).First(&station, stationID).Error; err != nil {
+		return nil, err
+	}
+	response.StationName = station.Name
+	
+	// Get outbound schedules (from this station to others)
+	var outboundSchedules []*models.Schedule
+	outboundQuery := r.db.WithContext(ctx).
+		Preload("Route").
+		Preload("Route.EndStation").
+		Where("station_id = ?", stationID).
+		Order("departure_time asc").
+		Limit(10)
+	
+	if err := outboundQuery.Find(&outboundSchedules).Error; err != nil {
+		return nil, err
+	}
+	
+	// Convert to simple format
+	outboundTimes := make([]models.SimpleScheduleInfo, 0, len(outboundSchedules))
+	for _, schedule := range outboundSchedules {
+		outboundTimes = append(outboundTimes, models.SimpleScheduleInfo{
+			DepartureTime: schedule.DepartureTime.Format("15:04"),
+			Destination:   schedule.Route.EndStation.Name,
+		})
+	}
+	response.OutboundTimes = outboundTimes
+	
+	// Get inbound schedules (from others to this station)
+	var inboundRouteIDs []uint
+	if err := r.db.WithContext(ctx).
+		Model(&models.Route{}).
+		Where("end_station_id = ?", stationID).
+		Pluck("id", &inboundRouteIDs).Error; err != nil {
+		return nil, err
+	}
+	
+	var inboundSchedules []*models.Schedule
+	inboundQuery := r.db.WithContext(ctx).
+		Preload("Route").
+		Preload("Route.StartStation").
+		Where("route_id IN ?", inboundRouteIDs).
+		Order("departure_time asc").
+		Limit(10)
+	
+	if err := inboundQuery.Find(&inboundSchedules).Error; err != nil {
+		return nil, err
+	}
+	
+	// Convert to simple format
+	inboundTimes := make([]models.SimpleScheduleInfo, 0, len(inboundSchedules))
+	for _, schedule := range inboundSchedules {
+		inboundTimes = append(inboundTimes, models.SimpleScheduleInfo{
+			DepartureTime: schedule.DepartureTime.Format("15:04"),
+			Destination:   schedule.Route.StartStation.Name,
+		})
+	}
+	response.InboundTimes = inboundTimes
+	
+	// Add station details
+	response.StationDetails = "สถานีขนส่งผู้โดยสารสถานี" + station.Name + " ให้บริการเดินรถระหว่างเมือง ตั้งอยู่ที่ " + station.Location
+	
+	return response, nil
 }

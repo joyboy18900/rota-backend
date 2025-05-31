@@ -9,12 +9,14 @@ import (
 )
 
 // SetupStationRoutes sets up all station-related routes
-func SetupStationRoutes(app *fiber.App, stationHandler *handler.StationHandler, authService services.AuthService) {
+func SetupStationRoutes(app *fiber.App, stationHandler *handler.StationHandler, scheduleHandler *handler.ScheduleHandler, authService services.AuthService) {
 	// Create public group for routes that don't need authentication
 	publicRoutes := app.Group("/api/v1/stations")
 	
 	// Public endpoints
 	publicRoutes.Get("/", stationHandler.GetAllStations)
+	// Get station schedules (both inbound and outbound)
+	publicRoutes.Get("/:id/schedules", scheduleHandler.GetSchedulesByStation)
 
 	// Protected routes for viewing
 	protectedRoutes := app.Group("/api/v1/stations")

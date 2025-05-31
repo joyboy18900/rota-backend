@@ -15,6 +15,8 @@ type ScheduleService interface {
 	CreateSchedule(ctx context.Context, schedule *models.Schedule) error
 	UpdateSchedule(ctx context.Context, schedule *models.Schedule) error
 	DeleteSchedule(ctx context.Context, id uint) error
+	GetSchedulesByStation(ctx context.Context, stationID uint, limit int) (models.StationSchedulesResponse, error)
+	GetSimpleSchedulesByStation(ctx context.Context, stationID uint) (*models.SimpleStationScheduleResponse, error)
 }
 
 // scheduleService implements ScheduleService
@@ -93,4 +95,23 @@ func (s *scheduleService) SearchSchedules(ctx context.Context, params models.Sch
 // DeleteSchedule deletes a schedule
 func (s *scheduleService) DeleteSchedule(ctx context.Context, id uint) error {
 	return s.scheduleRepo.Delete(ctx, id)
+}
+
+// GetSchedulesByStation retrieves schedules (both inbound and outbound) for a specific station
+// with a limit of schedules per direction
+func (s *scheduleService) GetSchedulesByStation(ctx context.Context, stationID uint, limit int) (models.StationSchedulesResponse, error) {
+	response, err := s.scheduleRepo.FindSchedulesByStation(ctx, stationID, limit)
+	
+	// If station details is empty, provide a default description based on station name
+	if response.StationDetails == "" && response.Station.ID > 0 {
+		response.StationDetails = "สถานีขนส่งผู้โดยสาร" + response.Station.Name + " ให้บริการเดินรถระหว่างเมือง ตั้งอยู่ที่ " + response.Station.Location
+	}
+	
+	return response, err
+}
+
+// GetSimpleSchedulesByStation retrieves a simplified version of schedules for a station
+// with only departure times and destinations, limited to 10 schedules in each direction
+func (s *scheduleService) GetSimpleSchedulesByStation(ctx context.Context, stationID uint) (*models.SimpleStationScheduleResponse, error) {
+	return s.scheduleRepo.FindSimpleSchedulesByStation(ctx, stationID)
 }

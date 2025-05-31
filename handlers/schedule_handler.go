@@ -265,3 +265,49 @@ func (h *ScheduleHandler) DeleteSchedule(c *fiber.Ctx) error {
 		"message": "Schedule deleted successfully",
 	})
 }
+
+// GetSchedulesByStation retrieves schedules (both inbound and outbound) for a specific station
+// Returns simplified schedule format with just station name, departure times and destinations
+// Fixed at 10 schedules each direction
+func (h *ScheduleHandler) GetSchedulesByStation(c *fiber.Ctx) error {
+	// Parse station ID from path parameters
+	stationID, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid station ID",
+		})
+	}
+
+	// Call service to get simplified schedules (10 per direction)
+	response, err := h.scheduleService.GetSimpleSchedulesByStation(c.Context(), uint(stationID))
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Station or schedules not found: " + err.Error(),
+		})
+	}
+
+	return c.JSON(response)
+}
+
+// GetSimpleSchedulesByStation retrieves a simplified version of schedules for a station
+// with only departure times and destinations, limited to 10 schedules in each direction
+func (h *ScheduleHandler) GetSimpleSchedulesByStation(c *fiber.Ctx) error {
+	// Parse station ID from path parameters
+	stationID, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid station ID",
+		})
+	}
+
+	// Call service to get simple schedules for this station
+	// (Fixed at 10 schedules each direction as per requirement)
+	response, err := h.scheduleService.GetSimpleSchedulesByStation(c.Context(), uint(stationID))
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Station or schedules not found: " + err.Error(),
+		})
+	}
+
+	return c.JSON(response)
+}

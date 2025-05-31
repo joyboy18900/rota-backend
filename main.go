@@ -160,7 +160,7 @@ func main() {
 	routes.SetupAuthRoutes(app, authHandler, authService)
 	routes.SetupUserRoutes(app, userHandler, authService)
 	routes.SetupRouteRoutes(app, routeHandler, authService)
-	routes.SetupStationRoutes(app, stationHandler, authService)
+	routes.SetupStationRoutes(app, stationHandler, scheduleHandler, authService)
 	routes.SetupFavoriteRoutes(app, favoriteHandler, authService, favoriteService)
 	routes.SetupVehicleRoutes(app, vehicleHandler, authService)
 	routes.SetupScheduleRoutes(app, scheduleHandler, authService)

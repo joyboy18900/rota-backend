@@ -25,3 +25,27 @@ type Schedule struct {
 	Station      Station       `gorm:"foreignKey:StationID" json:"station,omitempty"`
 	ScheduleLogs []ScheduleLog `gorm:"foreignKey:ScheduleID" json:"-"`
 }
+
+// StationSchedulesResponse represents the response for a station's schedule inquiry
+// Contains station details and both outbound and inbound schedules
+type StationSchedulesResponse struct {
+	Station           Station      `json:"station"`             // The station details
+	OutboundSchedules []*Schedule  `json:"outbound_schedules"` // Schedules leaving from this station
+	InboundSchedules  []*Schedule  `json:"inbound_schedules"`  // Schedules arriving at this station
+	StationDetails    string       `json:"station_details"`    // Additional information about the station
+}
+
+// SimpleScheduleInfo represents a simplified view of a schedule with just essential information
+type SimpleScheduleInfo struct {
+	DepartureTime string `json:"departure_time"` // Departure time in readable format
+	Destination   string `json:"destination"`    // Destination station name
+}
+
+// SimpleStationScheduleResponse represents a simplified response for station schedules
+// Contains only the essential information needed for display
+type SimpleStationScheduleResponse struct {
+	StationName     string              `json:"station_name"`     // Name of the station
+	OutboundTimes   []SimpleScheduleInfo `json:"outbound_times"`  // Simplified outbound schedules
+	InboundTimes    []SimpleScheduleInfo `json:"inbound_times"`   // Simplified inbound schedules
+	StationDetails  string              `json:"station_details"` // Brief description of the station
+}
