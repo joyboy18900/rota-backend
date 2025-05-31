@@ -140,9 +140,21 @@ func main() {
 	app.Use(recover.New())
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowOrigins: "*", // Allow all origins
+		AllowMethods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Requested-With",
+		ExposeHeaders: "Content-Length, Authorization",
+		AllowCredentials: false, // Changed to false to work with wildcard origins
+		MaxAge: 86400, // 24 hours
 	}))
+
+	// Health check endpoint
+	app.Get("/api/v1/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "ok",
+			"message": "API is healthy",
+		})
+	})
 
 	// Routes
 	routes.SetupAuthRoutes(app, authHandler, authService)

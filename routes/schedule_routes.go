@@ -13,15 +13,15 @@ func SetupScheduleRoutes(
 	scheduleHandler *handler.ScheduleHandler,
 	authService services.AuthService,
 ) {
-	scheduleGroup := app.Group("/api/v1/schedules")
-	scheduleGroup.Use(middleware.AuthMiddleware(authService))
-
-	// Advanced search endpoint - ต้องอยู่ก่อนเส้นทาง /:id เพื่อป้องกันการจับคู่ผิดพลาด
-	scheduleGroup.Get("/search", scheduleHandler.SearchSchedules)
+	// Public group for read-only operations that don't need authentication
+	publicGroup := app.Group("/api/v1/schedules")
 	
-	// Read operations - accessible to all authenticated users
-	scheduleGroup.Get("/", scheduleHandler.GetAllSchedules)
-	scheduleGroup.Get("/:id", scheduleHandler.GetScheduleByID)
+	// Advanced search endpoint - ต้องอยู่ก่อนเส้นทาง /:id เพื่อป้องกันการจับคู่ผิดพลาด
+	publicGroup.Get("/search", scheduleHandler.SearchSchedules)
+	
+	// Read operations - accessible to all users without authentication
+	publicGroup.Get("/", scheduleHandler.GetAllSchedules)
+	publicGroup.Get("/:id", scheduleHandler.GetScheduleByID)
 	
 	// Admin-only operations for schedule management
 	adminScheduleGroup := app.Group("/api/v1/schedules")

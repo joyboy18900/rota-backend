@@ -59,6 +59,7 @@ services:
         condition: service_healthy
     networks:
       - rota-network
+    # ไม่ใช้ healthcheck เพื่อความง่าย
     command: go run main.go
 
   # PostgreSQL Database

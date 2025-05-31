@@ -9,12 +9,7 @@
       "name": "Get All Stations (Public)",
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{user_token}}"
-          }
-        ],
+        "header": [],
         "url": {
           "raw": "http://localhost:8000/api/v1/stations",
           "protocol": "http",
@@ -29,12 +24,7 @@
       "name": "Get Station by ID (Public)",
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{user_token}}"
-          }
-        ],
+        "header": [],
         "url": {
           "raw": "http://localhost:8000/api/v1/stations/1",
           "protocol": "http",
