@@ -9,7 +9,7 @@ type Station struct {
 	// Relations
 	StartRoutes      []Route       `gorm:"foreignKey:StartStationID" json:"-"`
 	EndRoutes        []Route       `gorm:"foreignKey:EndStationID" json:"-"`
-	Schedules        []Schedule    `gorm:"foreignKey:StationID" json:"-"`
+	Schedules        []Schedule    `gorm:"foreignKey:StationID" json:"schedules,omitempty"`
 	Staff            []Staff       `gorm:"foreignKey:StationID" json:"-"`
 	Favorites        []Favorite    `gorm:"foreignKey:StationID" json:"-"`
 }

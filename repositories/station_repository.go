@@ -39,7 +39,13 @@ func (r *stationRepository) Create(ctx context.Context, station *models.Station)
 // FindByID retrieves a station by ID
 func (r *stationRepository) FindByID(ctx context.Context, id uint) (*models.Station, error) {
 	var station models.Station
-	if err := r.db.WithContext(ctx).First(&station, id).Error; err != nil {
+	db := r.db.WithContext(ctx)
+	db = db.Preload("Schedules.Route.StartStation")
+	db = db.Preload("Schedules.Route.EndStation")
+	db = db.Preload("Schedules.Vehicle")
+	db = db.Preload("Schedules.Station")
+	
+	if err := db.First(&station, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("station not found: %w", err)
 		}
@@ -51,7 +57,13 @@ func (r *stationRepository) FindByID(ctx context.Context, id uint) (*models.Stat
 // FindAll retrieves all stations
 func (r *stationRepository) FindAll(ctx context.Context) ([]*models.Station, error) {
 	var stations []*models.Station
-	if err := r.db.WithContext(ctx).Find(&stations).Error; err != nil {
+	db := r.db.WithContext(ctx)
+	db = db.Preload("Schedules.Route.StartStation")
+	db = db.Preload("Schedules.Route.EndStation")
+	db = db.Preload("Schedules.Vehicle")
+	db = db.Preload("Schedules.Station")
+	
+	if err := db.Find(&stations).Error; err != nil {
 		return nil, fmt.Errorf("failed to find stations: %w", err)
 	}
 	return stations, nil

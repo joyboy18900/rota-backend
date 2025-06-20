@@ -49,7 +49,13 @@ func (s *favoriteService) AddFavorite(ctx context.Context, userID, stationID uin
 		return nil, fmt.Errorf("failed to add favorite: %w", err)
 	}
 
-	return favorite, nil
+	// โหลดข้อมูล favorite ที่สร้างเสร็จแล้วจากฐานข้อมูล พร้อมความสัมพันธ์
+	completeFavorite, err := s.favoriteRepo.FindByID(ctx, favorite.ID)
+	if err != nil {
+		return favorite, nil // ส่งคืนข้อมูลธรรมดาถ้าไม่สามารถโหลดข้อมูลเพิ่มเติม
+	}
+
+	return completeFavorite, nil
 }
 
 // GetUserFavorites retrieves all favorites for a user

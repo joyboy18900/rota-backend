@@ -15,13 +15,15 @@ func SetupStationRoutes(app *fiber.App, stationHandler *handler.StationHandler, 
 	
 	// Public endpoints
 	publicRoutes.Get("/", stationHandler.GetAllStations)
+	// Get specific station details
+	publicRoutes.Get("/:id", stationHandler.GetStationByID)
 	// Get station schedules (both inbound and outbound)
 	publicRoutes.Get("/:id/schedules", scheduleHandler.GetSchedulesByStation)
 
 	// Protected routes for viewing
 	protectedRoutes := app.Group("/api/v1/stations")
 	protectedRoutes.Use(middleware.AuthMiddleware(authService))
-	protectedRoutes.Get("/:id", stationHandler.GetStationByID)
+	// No protected routes for basic station viewing
 	
 	// Admin-only routes for station management
 	adminRoutes := app.Group("/api/v1/stations")
