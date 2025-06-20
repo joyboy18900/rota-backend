@@ -160,7 +160,12 @@ func (h *FavoriteHandler) AddStationToFavorites(c *fiber.Ctx) error {
 	if err != nil {
 		// ตรวจสอบข้อความ error เพื่อให้การตอบกลับที่เหมาะสม
 		if err.Error() == "station is already a favorite" {
-			return utils.ErrorResponse(c, fiber.StatusConflict, "This station is already in your favorites")
+			// ส่ง success response แทน error เมื่อสถานีอยู่ในรายการโปรดอยู่แล้ว
+			existingFavorite, findErr := h.favoriteService.GetFavoriteByUserAndStation(c.Context(), userID, uint(stationID))
+			if findErr != nil {
+				return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to fetch favorite information")
+			}
+			return utils.SuccessResponse(c, fiber.StatusOK, "Station is already in your favorites", existingFavorite)
 		}
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to add favorite: "+err.Error())
 	}

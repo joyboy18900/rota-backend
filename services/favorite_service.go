@@ -15,6 +15,7 @@ type FavoriteService interface {
 	GetUserFavorites(ctx context.Context, userID uint) ([]models.Favorite, error)
 	RemoveFavorite(ctx context.Context, id, userID uint) error
 	GetFavoriteByID(ctx context.Context, id uint) (*models.Favorite, error)
+	GetFavoriteByUserAndStation(ctx context.Context, userID, stationID uint) (*models.Favorite, error)
 	GetAllFavorites(ctx context.Context) ([]models.Favorite, error)
 	CreateFavorite(ctx context.Context, favorite *models.Favorite) error
 	UpdateFavorite(ctx context.Context, favorite *models.Favorite) error
@@ -96,4 +97,9 @@ func (s *favoriteService) UpdateFavorite(ctx context.Context, favorite *models.F
 
 func (s *favoriteService) DeleteFavorite(ctx context.Context, id uint) error {
 	return s.favoriteRepo.Delete(ctx, id)
+}
+
+// GetFavoriteByUserAndStation ดึงรายการโปรดตามผู้ใช้และสถานี
+func (s *favoriteService) GetFavoriteByUserAndStation(ctx context.Context, userID, stationID uint) (*models.Favorite, error) {
+	return s.favoriteRepo.FindByUserAndStation(ctx, userID, stationID)
 }
