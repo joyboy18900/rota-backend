@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"rota-api/dto"
 	"rota-api/models"
 	"rota-api/services"
 	"rota-api/utils"
@@ -225,5 +226,16 @@ func (h *FavoriteHandler) GetUserFavorites(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to get favorites: "+err.Error())
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "Favorites retrieved successfully", favorites)
+	// แปลงข้อมูลให้อยู่ในรูปแบบที่กระชับและตรงตามความต้องการ
+	response := make([]dto.FavoriteStationResponse, 0, len(favorites))
+	for _, fav := range favorites {
+		response = append(response, dto.FavoriteStationResponse{
+			StationID: fav.StationID,
+			CreatedAt: fav.CreatedAt,
+			Name:      fav.Station.Name,
+			Location:  fav.Station.Location,
+		})
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "Favorites retrieved successfully", response)
 }

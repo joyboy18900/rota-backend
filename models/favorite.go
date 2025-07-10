@@ -12,6 +12,6 @@ type Favorite struct {
 	StationID uint      `json:"station_id"`
 	CreatedAt time.Time `json:"created_at"`
 	// Relations
-	User    User    `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	User    User    `gorm:"foreignKey:UserID" json:"-"` // ไม่ส่งข้อมูล User กลับเนื่องจากไม่จำเป็น
 	Station Station `gorm:"foreignKey:StationID" json:"station,omitempty"`
 }

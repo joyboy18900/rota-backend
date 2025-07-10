@@ -20,11 +20,10 @@ func SetupScheduleRoutes(
 	publicGroup.Get("/search", scheduleHandler.SearchSchedules)
 	
 	// Read operations - accessible to all users without authentication
-	publicGroup.Get("/", scheduleHandler.GetAllSchedules)
 	publicGroup.Get("/:id", scheduleHandler.GetScheduleByID)
 	
 	// Admin-only operations for schedule management
-	adminScheduleGroup := app.Group("/api/v1/schedules")
+	adminScheduleGroup := app.Group("/api/v1/admin/schedules")
 	adminScheduleGroup.Use(middleware.AuthMiddleware(authService), middleware.AdminMiddleware())
 	adminScheduleGroup.Post("/", scheduleHandler.CreateSchedule)
 	adminScheduleGroup.Put("/:id", scheduleHandler.UpdateSchedule)
