@@ -1,0 +1,342 @@
+{
+    "info": {
+      "_postman_id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+      "name": "Rota API",
+      "description": "Rota API Collection สำหรับระบบขนส่ง",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "http://localhost:8000",
+        "type": "string"
+      },
+      {
+        "key": "token",
+        "value": "",
+        "type": "string"
+      }
+    ],
+    "item": [
+      {
+        "name": "Authentication",
+        "description": "เกี่ยวกับการยืนยันตัวตนของผู้ใช้",
+        "item": [
+          {
+            "name": "ลงทะเบียนผู้ใช้ใหม่",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n\t\"username\": \"newuser\",\n\t\"email\": \"newuser@email.com\",\n\t\"password\": \"password\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/v1/auth/register",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "auth", "register"]
+              },
+              "description": "ลงทะเบียนผู้ใช้ใหม่เพื่อเข้าใช้ระบบ"
+            }
+          },
+          {
+            "name": "เข้าสู่ระบบ",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "var jsonData = JSON.parse(responseBody);",
+                    "pm.environment.set(\"token\", jsonData.data.access_token);"
+                  ]
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n\t\"email\": \"user1@email.com\",\n\t\"password\": \"password\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/v1/auth/login",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "auth", "login"]
+              },
+              "description": "เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน"
+            }
+          },
+          {
+            "name": "ดูข้อมูลผู้ใช้ปัจจุบัน",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/v1/auth/me",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "auth", "me"]
+              },
+              "description": "ดูข้อมูลของผู้ใช้ที่กำลังเข้าสู่ระบบอยู่"
+            }
+          },
+          {
+            "name": "ออกจากระบบ",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/v1/auth/logout",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "auth", "logout"]
+              },
+              "description": "ออกจากระบบ (ทำ token ให้หมดอายุ)"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Stations",
+        "description": "จัดการข้อมูลสถานี",
+        "item": [
+          {
+            "name": "ดูรายการสถานีทั้งหมด",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/stations",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "stations"]
+              },
+              "description": "ดึงรายชื่อสถานีทั้งหมดในระบบ"
+            }
+          },
+          {
+            "name": "ดูข้อมูลสถานีเฉพาะ",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/stations/2",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "stations", "2"]
+              },
+              "description": "ดึงข้อมูลสถานีตาม ID พร้อมข้อมูลตารางเวลา"
+            }
+          },
+          {
+            "name": "ดูตารางเวลาของสถานีเฉพาะ",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/stations/2/schedules",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "stations", "2", "schedules"]
+              },
+              "description": "ดึงตารางเวลาเฉพาะของสถานี"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Favorites",
+        "description": "จัดการรายการสถานีโปรด",
+        "item": [
+          {
+            "name": "ดูรายการสถานีโปรดของผู้ใช้",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/v1/favorites/user",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "favorites", "user"]
+              },
+              "description": "ดึงรายการสถานีโปรดทั้งหมดของผู้ใช้ปัจจุบัน"
+            }
+          },
+          {
+            "name": "เพิ่มสถานีเข้ารายการโปรด",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/v1/favorites/stations/3",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "favorites", "stations", "3"]
+              },
+              "description": "เพิ่มสถานีเข้าในรายการโปรดของผู้ใช้ปัจจุบัน"
+            }
+          },
+          {
+            "name": "ลบสถานีออกจากรายการโปรด",
+            "request": {
+              "method": "DELETE",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/v1/favorites/11",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "favorites", "11"]
+              },
+              "description": "ลบสถานีออกจากรายการโปรดของผู้ใช้ปัจจุบัน"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Schedules",
+        "description": "จัดการข้อมูลตารางเวลา",
+        "item": [
+          {
+            "name": "ดูข้อมูลตารางเวลาเฉพาะ",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/schedules/5",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "schedules", "5"]
+              },
+              "description": "ดึงข้อมูลตารางเวลาตาม ID"
+            }
+          },
+          {
+            "name": "ค้นหาตารางเวลา",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/schedules/search?start_station=1&end_station=2&date=2025-07-10",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "schedules", "search"],
+                "query": [
+                  {
+                    "key": "start_station",
+                    "value": "1"
+                  },
+                  {
+                    "key": "end_station",
+                    "value": "2"
+                  },
+                  {
+                    "key": "date",
+                    "value": "2025-07-10"
+                  }
+                ]
+              },
+              "description": "ค้นหาตารางเวลาตามเงื่อนไข"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Admin Operations",
+        "description": "การจัดการระบบสำหรับผู้ดูแล",
+        "item": [
+          {
+            "name": "เพิ่มตารางเวลาใหม่",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n\t\"route_id\": 1,\n\t\"vehicle_id\": 1,\n\t\"station_id\": 1,\n\t\"round\": 1,\n\t\"departure_time\": \"2025-07-11T07:00:00Z\",\n\t\"arrival_time\": \"2025-07-11T07:30:00Z\",\n\t\"status\": \"scheduled\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/v1/admin/schedules",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "admin", "schedules"]
+              },
+              "description": "เพิ่มตารางเวลาใหม่ (สำหรับแอดมินเท่านั้น)"
+            }
+          },
+          {
+            "name": "แก้ไขตารางเวลา",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n\t\"route_id\": 1,\n\t\"vehicle_id\": 1,\n\t\"station_id\": 1,\n\t\"round\": 1,\n\t\"departure_time\": \"2025-07-11T08:00:00Z\",\n\t\"arrival_time\": \"2025-07-11T08:30:00Z\",\n\t\"status\": \"scheduled\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/api/v1/admin/schedules/5",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "admin", "schedules", "5"]
+              },
+              "description": "แก้ไขตารางเวลาที่มีอยู่ (สำหรับแอดมินเท่านั้น)"
+            }
+          },
+          {
+            "name": "ลบตารางเวลา",
+            "request": {
+              "method": "DELETE",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/api/v1/admin/schedules/5",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "admin", "schedules", "5"]
+              },
+              "description": "ลบตารางเวลาออกจากระบบ (สำหรับแอดมินเท่านั้น)"
+            }
+          }
+        ]
+      }
+    ]
+  }
