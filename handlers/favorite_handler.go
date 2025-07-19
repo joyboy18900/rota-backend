@@ -137,12 +137,9 @@ func (h *FavoriteHandler) DeleteFavorite(c *fiber.Ctx) error {
 	})
 }
 
-// AddStationToFavorites เพิ่มสถานีเข้าไปในรายการโปรดของผู้ใช้ด้วยการคลิกเดียว
 func (h *FavoriteHandler) AddStationToFavorites(c *fiber.Ctx) error {
-	// ดึง user ID จาก context (ตั้งค่าโดย AuthMiddleware)
 	userID, ok := c.Locals("userID").(uint)
 	if !ok {
-		// ถ้า userID จาก context ไม่ใช่ uint ให้ลองแปลงจาก int
 		userIDInt, ok := c.Locals("userID").(int)
 		if !ok {
 			return utils.ErrorResponse(c, fiber.StatusUnauthorized, "User not authenticated")
@@ -150,18 +147,14 @@ func (h *FavoriteHandler) AddStationToFavorites(c *fiber.Ctx) error {
 		userID = uint(userIDInt)
 	}
 
-	// ดึง station ID จาก URL parameter และตรวจสอบความถูกต้อง
 	stationID, err := strconv.ParseUint(c.Params("stationId"), 10, 32)
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid station ID")
 	}
 
-	// เรียกใช้ service method เพื่อเพิ่มสถานีโปรด
 	favorite, err := h.favoriteService.AddFavorite(c.Context(), userID, uint(stationID))
 	if err != nil {
-		// ตรวจสอบข้อความ error เพื่อให้การตอบกลับที่เหมาะสม
 		if err.Error() == "station is already a favorite" {
-			// ส่ง success response แทน error เมื่อสถานีอยู่ในรายการโปรดอยู่แล้ว
 			existingFavorite, findErr := h.favoriteService.GetFavoriteByUserAndStation(c.Context(), userID, uint(stationID))
 			if findErr != nil {
 				return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to fetch favorite information")
@@ -174,12 +167,9 @@ func (h *FavoriteHandler) AddStationToFavorites(c *fiber.Ctx) error {
 	return utils.SuccessResponse(c, fiber.StatusCreated, "Station added to favorites", favorite)
 }
 
-// RemoveStationFromFavorites ลบสถานีออกจากรายการโปรดของผู้ใช้ด้วยการคลิกเดียว
-func (h *FavoriteHandler) RemoveStationFromFavorites(c *fiber.Ctx) error {
-	// ดึง user ID จาก context (ตั้งค่าโดย AuthMiddleware)
+func (h *FavoriteHandler) RemoveStationByStationId(c *fiber.Ctx) error {
 	userID, ok := c.Locals("userID").(uint)
 	if !ok {
-		// ถ้า userID จาก context ไม่ใช่ uint ให้ลองแปลงจาก int
 		userIDInt, ok := c.Locals("userID").(int)
 		if !ok {
 			return utils.ErrorResponse(c, fiber.StatusUnauthorized, "User not authenticated")
@@ -187,13 +177,41 @@ func (h *FavoriteHandler) RemoveStationFromFavorites(c *fiber.Ctx) error {
 		userID = uint(userIDInt)
 	}
 
-	// ดึง favorite ID จาก URL parameter และตรวจสอบความถูกต้อง
+	stationID, err := strconv.ParseUint(c.Params("stationId"), 10, 32)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid station ID")
+	}
+
+	favorite, err := h.favoriteService.GetFavoriteByUserAndStation(c.Context(), userID, uint(stationID))
+	if err != nil {
+		if err.Error() == "favorite not found" {
+			return utils.ErrorResponse(c, fiber.StatusNotFound, "Station not in favorites")
+		}
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to find favorite: "+err.Error())
+	}
+
+	if err := h.favoriteService.RemoveFavorite(c.Context(), favorite.ID, userID); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to remove favorite: "+err.Error())
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "Station removed from favorites", nil)
+}
+
+func (h *FavoriteHandler) RemoveStationFromFavorites(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(uint)
+	if !ok {
+		userIDInt, ok := c.Locals("userID").(int)
+		if !ok {
+			return utils.ErrorResponse(c, fiber.StatusUnauthorized, "User not authenticated")
+		}
+		userID = uint(userIDInt)
+	}
+
 	favoriteID, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid favorite ID")
 	}
 
-	// เรียกใช้ service method เพื่อลบสถานีโปรด
 	if err := h.favoriteService.RemoveFavorite(c.Context(), uint(favoriteID), userID); err != nil {
 		if err.Error() == "favorite not found" {
 			return utils.ErrorResponse(c, fiber.StatusNotFound, "Favorite not found")
@@ -207,12 +225,9 @@ func (h *FavoriteHandler) RemoveStationFromFavorites(c *fiber.Ctx) error {
 	return utils.SuccessResponse(c, fiber.StatusOK, "Station removed from favorites", nil)
 }
 
-// GetUserFavorites ดึงรายการสถานีโปรดทั้งหมดของผู้ใช้ปัจจุบัน
 func (h *FavoriteHandler) GetUserFavorites(c *fiber.Ctx) error {
-	// ดึง user ID จาก context (ตั้งค่าโดย AuthMiddleware)
 	userID, ok := c.Locals("userID").(uint)
 	if !ok {
-		// ถ้า userID จาก context ไม่ใช่ uint ให้ลองแปลงจาก int
 		userIDInt, ok := c.Locals("userID").(int)
 		if !ok {
 			return utils.ErrorResponse(c, fiber.StatusUnauthorized, "User not authenticated")
@@ -220,13 +235,11 @@ func (h *FavoriteHandler) GetUserFavorites(c *fiber.Ctx) error {
 		userID = uint(userIDInt)
 	}
 
-	// เรียกใช้ service method เพื่อดึงรายการสถานีโปรด
 	favorites, err := h.favoriteService.GetUserFavorites(c.Context(), userID)
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to get favorites: "+err.Error())
 	}
 
-	// แปลงข้อมูลให้อยู่ในรูปแบบที่กระชับและตรงตามความต้องการ
 	response := make([]dto.FavoriteStationResponse, 0, len(favorites))
 	for _, fav := range favorites {
 		response = append(response, dto.FavoriteStationResponse{

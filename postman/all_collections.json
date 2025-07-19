@@ -173,9 +173,9 @@
                 }
               ],
               "url": {
-                "raw": "{{base_url}}/api/v1/favorites/user",
+                "raw": "{{base_url}}/api/v1/favorites/",
                 "host": ["{{base_url}}"],
-                "path": ["api", "v1", "favorites", "user"]
+                "path": ["api", "v1", "favorites", ""]
               },
               "description": "ดึงรายการสถานีโปรดทั้งหมดของผู้ใช้ปัจจุบัน"
             }
@@ -209,9 +209,9 @@
                 }
               ],
               "url": {
-                "raw": "{{base_url}}/api/v1/favorites/11",
+                "raw": "{{base_url}}/api/v1/favorites/stations/11",
                 "host": ["{{base_url}}"],
-                "path": ["api", "v1", "favorites", "11"]
+                "path": ["api", "v1", "favorites", "stations", "11"]
               },
               "description": "ลบสถานีออกจากรายการโปรดของผู้ใช้ปัจจุบัน"
             }

@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"rota-api/handlers" // Import as 'handler' (package name in source files)
+	handler "rota-api/handlers"
 	"rota-api/middleware"
 	"rota-api/services"
 
@@ -10,24 +10,20 @@ import (
 
 func SetupFavoriteRoutes(
 	app *fiber.App,
-	favoriteHandler *handler.FavoriteHandler, // Use 'handler' as declared in package
+	favoriteHandler *handler.FavoriteHandler,
 	authService services.AuthService,
 	favoriteService services.FavoriteService,
 ) {
 	favoriteGroup := app.Group("/api/v1/favorites")
 	favoriteGroup.Use(middleware.AuthMiddleware(authService))
 
-	// ดึงรายการโปรดของผู้ใช้ปัจจุบัน
-	favoriteGroup.Get("/user", favoriteHandler.GetUserFavorites)
+	favoriteGroup.Get("/", favoriteHandler.GetUserFavorites)
+	favoriteGroup.Post("/stations/:stationId", favoriteHandler.AddStationToFavorites)
+	favoriteGroup.Delete("/stations/:stationId", favoriteHandler.RemoveStationByStationId)
 	
-	// เพิ่ม endpoint สำหรับการเพิ่มและลบสถานีโปรดแบบคลิกเดียว
-	favoriteGroup.Post("/stations/:stationId", favoriteHandler.AddStationToFavorites) // เพิ่มสถานีเข้ารายการโปรด
-	favoriteGroup.Delete("/:id/remove", favoriteHandler.RemoveStationFromFavorites) // ลบสถานีออกจากรายการโปรด
-	
-	// API เดิมสำหรับ CRUD ทั่วไป
-	favoriteGroup.Get("/", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.GetAllFavorites)
-	favoriteGroup.Post("/", favoriteHandler.CreateFavorite)
-	favoriteGroup.Get("/:id", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.GetFavoriteByID)
-	favoriteGroup.Put("/:id", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.UpdateFavorite)
-	favoriteGroup.Delete("/:id", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.DeleteFavorite)
+	favoriteGroup.Get("/admin", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.GetAllFavorites)
+	favoriteGroup.Post("/admin", favoriteHandler.CreateFavorite)
+	favoriteGroup.Get("/admin/:id", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.GetFavoriteByID)
+	favoriteGroup.Put("/admin/:id", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.UpdateFavorite)
+	favoriteGroup.Delete("/admin/:id", middleware.OwnFavoriteMiddleware(favoriteService), favoriteHandler.DeleteFavorite)
 }
