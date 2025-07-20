@@ -56,6 +56,7 @@ type AuthService interface {
 
 	// Google OAuth operations
 	LoginWithGoogle(ctx context.Context, code, state string) (*models.User, string, error)
+	LoginWithGoogleAndRedirect(ctx context.Context, code, state, redirectURI string) (*models.User, string, error)
 	CreateOrUpdateGoogleUser(ctx context.Context, userInfo *GoogleUserInfo) (*models.User, error)
 
 	// Utility methods
@@ -354,6 +355,31 @@ func (s *AuthServiceImpl) CheckPassword(password, hash string) bool {
 // LoginWithGoogle handles Google OAuth login
 func (s *AuthServiceImpl) LoginWithGoogle(ctx context.Context, code, state string) (*models.User, string, error) {
 	token, err := s.googleOAuth.ExchangeCode(code)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to exchange code: %w", err)
+	}
+
+	userInfo, err := s.googleOAuth.GetUserInfo(token)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get user info: %w", err)
+	}
+
+	user, err := s.CreateOrUpdateGoogleUser(ctx, userInfo)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create or update user: %w", err)
+	}
+
+	accessToken, err := s.GenerateAccessToken(user)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	return user, accessToken, nil
+}
+
+// LoginWithGoogleAndRedirect handles Google OAuth login with custom redirect URI
+func (s *AuthServiceImpl) LoginWithGoogleAndRedirect(ctx context.Context, code, state, redirectURI string) (*models.User, string, error) {
+	token, err := s.googleOAuth.ExchangeCodeWithRedirect(code, redirectURI)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to exchange code: %w", err)
 	}

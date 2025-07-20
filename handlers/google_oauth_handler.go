@@ -74,9 +74,19 @@ func (h *GoogleOAuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid or expired state parameter")
 	}
 	
-	// Process Google login
-	log.Printf("[DEBUG] Processing Google OAuth callback - code: %s, state: %s", code[:10]+"...", state[:10]+"...")
-	user, accessToken, err := h.authService.LoginWithGoogle(c.Context(), code, state)
+	// Determine redirect_uri that was used for this OAuth flow
+	// Check referer to see if it came from frontend
+	redirectURI := os.Getenv("GOOGLE_REDIRECT_URL") // default backend URL
+	referer := c.Get("Referer")
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL != "" && strings.Contains(referer, frontendURL) {
+		// This callback came from frontend, use frontend callback URL
+		redirectURI = frontendURL + "/auth/callback"
+	}
+	
+	// Process Google login with correct redirect URI
+	log.Printf("[DEBUG] Processing Google OAuth callback - code: %s, state: %s, redirect_uri: %s", code[:10]+"...", state[:10]+"...", redirectURI)
+	user, accessToken, err := h.authService.LoginWithGoogleAndRedirect(c.Context(), code, state, redirectURI)
 	if err != nil {
 		log.Printf("[ERROR] Google OAuth authentication failed: %v", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to authenticate with Google: "+err.Error())
