@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"os"
 	"strings"
 
@@ -85,17 +84,14 @@ func (h *GoogleOAuthHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 	
 	// Process Google login with correct redirect URI
-	log.Printf("[DEBUG] Processing Google OAuth callback - code: %s, state: %s, redirect_uri: %s", code[:10]+"...", state[:10]+"...", redirectURI)
-	user, accessToken, err := h.authService.LoginWithGoogleAndRedirect(c.Context(), code, state, redirectURI)
+	user, accessToken, err := h.authService.LoginWithGoogle(c.Context(), code, state, redirectURI)
 	if err != nil {
-		log.Printf("[ERROR] Google OAuth authentication failed: %v", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to authenticate with Google: "+err.Error())
 	}
 	
 	// Generate refresh token
 	refreshToken, err := h.authService.GenerateRefreshToken()
 	if err != nil {
-		log.Printf("[ERROR] Failed to generate refresh token: %v", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to generate refresh token")
 	}
 	

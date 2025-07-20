@@ -24,7 +24,7 @@ services:
           - /api/v1/schedules
           - /api/v1/schedule-logs
         strip_path: false
-        # ปิดการใช้งาน JWT plugin ชั่วคราวเพื่อการทดสอบ
+        # JWT plugin temporarily disabled for testing
         # plugins:
         #   - name: jwt
         #     config:

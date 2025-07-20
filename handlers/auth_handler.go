@@ -302,20 +302,6 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	// 	return response.InternalServerError(c, "Failed to generate refresh token")
 	// }
 
-
-	// Invalidate old refresh token
-	// if err := h.tokenRepo.RevokeRefreshToken(req.RefreshToken); err != nil {
-	// 	// Log error but continue
-	// 	log.Printf("Failed to revoke refresh token: %v", err)
-	// }
-
-
-	// Store new refresh token
-	// if err := h.tokenRepo.StoreRefreshToken(user.ID, newRefreshToken, h.authService.GetRefreshExpiration()); err != nil {
-	// 	return response.InternalServerError(c, "Failed to store refresh token")
-	// }
-
-
 	// Return new tokens
 	return response.Success(c, AuthResponse{
 		AccessToken:  "new_access_token", // Replace with actual token
@@ -369,10 +355,6 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	// If refresh token is provided, invalidate it as well
 	if refreshToken != "" {
 		// In a real implementation, you would also invalidate the refresh token
-		// if err := h.tokenRepo.RevokeRefreshToken(refreshToken); err != nil {
-		// 	// Log error but don't fail the request
-		// 	log.Printf("Failed to revoke refresh token: %v", err)
-		// }
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)
