@@ -9,18 +9,19 @@ import (
 )
 
 // SetupAuthRoutes configures all auth routes
-func SetupAuthRoutes(app *fiber.App, handler *handler.AuthHandler, authService services.AuthService) {
+func SetupAuthRoutes(app *fiber.App, authHandler *handler.AuthHandler, googleHandler *handler.GoogleOAuthHandler, authService services.AuthService) {
 	auth := app.Group("/api/v1/auth")
 
 	// Public routes
-	auth.Post("/register", handler.Register)
-	auth.Post("/login", handler.Login)
-	// TODO: Implement Google OAuth routes in the future
-	// auth.Get("/google", handler.GoogleLogin)
-	// auth.Get("/google/callback", handler.GoogleCallback)
+	auth.Post("/register", authHandler.Register)
+	auth.Post("/login", authHandler.Login)
+	
+	// Google OAuth routes
+	auth.Get("/google", googleHandler.GoogleLogin)
+	auth.Get("/google/callback", googleHandler.GoogleCallback)
 
 	// Protected routes
-	auth.Get("/me", middleware.AuthMiddleware(authService), handler.GetCurrentUser)
-	auth.Post("/logout", middleware.AuthMiddleware(authService), handler.Logout)
-	auth.Post("/refresh", handler.RefreshToken)
+	auth.Get("/me", middleware.AuthMiddleware(authService), authHandler.GetCurrentUser)
+	auth.Post("/logout", middleware.AuthMiddleware(authService), authHandler.Logout)
+	auth.Post("/refresh", authHandler.RefreshToken)
 }

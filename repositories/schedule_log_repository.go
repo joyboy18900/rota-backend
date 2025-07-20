@@ -62,13 +62,13 @@ func (r *scheduleLogRepository) FindAll(ctx context.Context) ([]*models.Schedule
 }
 
 func (r *scheduleLogRepository) Create(ctx context.Context, scheduleLog *models.ScheduleLog) error {
-	// ใช้คำสั่ง SQL โดยตรงเพื่อหลีกเลี่ยงปัญหาคอลัมน์ updated_at
+	// Use raw SQL to avoid issues with updated_at column
 	sql := `INSERT INTO schedule_logs (schedule_id, staff_id, change_description) VALUES (?, ?, ?)`
 	return r.db.WithContext(ctx).Exec(sql, scheduleLog.ScheduleID, scheduleLog.StaffID, scheduleLog.ChangeDescription).Error
 }
 
 func (r *scheduleLogRepository) Update(ctx context.Context, scheduleLog *models.ScheduleLog) error {
-	// ใช้คำสั่ง SQL โดยตรงเพื่อหลีกเลี่ยงปัญหาคอลัมน์ updated_at
+	// Use raw SQL to avoid issues with updated_at column
 	sql := `UPDATE schedule_logs SET schedule_id = ?, staff_id = ?, change_description = ? WHERE id = ?`
 	return r.db.WithContext(ctx).Exec(sql, scheduleLog.ScheduleID, scheduleLog.StaffID, scheduleLog.ChangeDescription, scheduleLog.ID).Error
 }

@@ -104,9 +104,12 @@ func main() {
 		},
 	}
 
+	googleOAuthService := services.NewGoogleOAuthService()
+	
 	authService := services.NewAuthService(
 		userRepo,
 		redisRepo,
+		googleOAuthService,
 		authConfig,
 	)
 
@@ -122,6 +125,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
+	googleOAuthHandler := handler.NewGoogleOAuthHandler(authService, googleOAuthService)
 	userHandler := handler.NewUserHandler(userService, authService)
 	routeHandler := handler.NewRouteHandler(routeService)
 	stationHandler := handler.NewStationHandler(stationService)
@@ -157,7 +161,7 @@ func main() {
 	})
 
 	// Routes
-	routes.SetupAuthRoutes(app, authHandler, authService)
+	routes.SetupAuthRoutes(app, authHandler, googleOAuthHandler, authService)
 	routes.SetupUserRoutes(app, userHandler, authService)
 	routes.SetupRouteRoutes(app, routeHandler, authService)
 	routes.SetupStationRoutes(app, stationHandler, scheduleHandler, authService)
@@ -165,7 +169,7 @@ func main() {
 	routes.SetupVehicleRoutes(app, vehicleHandler, authService)
 	routes.SetupScheduleRoutes(app, scheduleHandler, authService)
 	routes.SetupScheduleLogRoutes(app, scheduleLogHandler, authService)
-	// เพิ่ม routes สำหรับ staff
+	// Add routes for staff
 	routes.SetupStaffRoutes(app, staffHandler, authService)
 
 	// Start server

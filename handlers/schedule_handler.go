@@ -43,7 +43,7 @@ func parseTimeParam(param string) (*time.Time, error) {
 	if param == "" {
 		return nil, nil
 	}
-	// รองรับรูปแบบ ISO8601 (2025-06-02T08:00:00Z)
+	// Support ISO8601 format (2025-06-02T08:00:00Z)
 	value, err := time.Parse(time.RFC3339, param)
 	if err != nil {
 		return nil, err

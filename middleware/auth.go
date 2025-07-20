@@ -45,7 +45,7 @@ func AuthMiddleware(authService services.AuthService) fiber.Handler {
 		// Extract token
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// ตรวจสอบว่า token อยู่ใน blacklist หรือไม่
+		// Check if token is in the blacklist
 		if authService.IsTokenBlacklisted(tokenString) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,

@@ -43,13 +43,13 @@ func (s *scheduleLogService) CreateScheduleLog(ctx context.Context, scheduleLog 
 
 // UpdateScheduleLog updates a schedule log
 func (s *scheduleLogService) UpdateScheduleLog(ctx context.Context, scheduleLog *models.ScheduleLog) error {
-	// ดึงข้อมูลเดิมก่อน
+	// Get original data first
 	existingLog, err := s.scheduleLogRepo.FindByID(ctx, scheduleLog.ID)
 	if err != nil {
 		return err
 	}
 
-	// อัพเดทเฉพาะฟิลด์ที่ระบุ
+	// Update only specified fields
 	if scheduleLog.ScheduleID != 0 {
 		existingLog.ScheduleID = scheduleLog.ScheduleID
 	}
@@ -72,13 +72,13 @@ func (s *scheduleLogService) UpdateScheduleLog(ctx context.Context, scheduleLog 
 		existingLog.Notes = scheduleLog.Notes
 	}
 
-	// บันทึกการอัพเดท
+	// Save the update
 	err = s.scheduleLogRepo.Update(ctx, existingLog)
 	if err != nil {
 		return err
 	}
 
-	// คัดลอกข้อมูลที่อัพเดทแล้วกลับไปยังพารามิเตอร์
+	// Copy updated data back to the parameter
 	*scheduleLog = *existingLog
 
 	return nil

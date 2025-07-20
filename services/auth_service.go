@@ -55,6 +55,10 @@ type AuthService interface {
 	IsTokenBlacklisted(token string) bool
 	AddToBlacklist(token string, expiry time.Duration) error
 
+	// Google OAuth operations
+	LoginWithGoogle(ctx context.Context, code, state string) (*models.User, string, error)
+	CreateOrUpdateGoogleUser(ctx context.Context, userInfo *GoogleUserInfo) (*models.User, error)
+
 	// Utility methods
 	GetJWTSecret() string
 	GetJWTExpiration() time.Duration
@@ -75,21 +79,24 @@ type AuthConfig struct {
 
 // AuthServiceImpl implements AuthService
 type AuthServiceImpl struct {
-	userRepo  repositories.UserRepository
-	redisRepo repositories.RedisRepository
-	config    AuthConfig
+	userRepo     repositories.UserRepository
+	redisRepo    repositories.RedisRepository
+	googleOAuth  GoogleOAuthService
+	config       AuthConfig
 }
 
 // NewAuthService creates a new instance of AuthService
 func NewAuthService(
 	userRepo repositories.UserRepository,
 	redisRepo repositories.RedisRepository,
+	googleOAuth GoogleOAuthService,
 	config AuthConfig,
 ) AuthService {
 	return &AuthServiceImpl{
-		userRepo:  userRepo,
-		redisRepo: redisRepo,
-		config:    config,
+		userRepo:    userRepo,
+		redisRepo:   redisRepo,
+		googleOAuth: googleOAuth,
+		config:      config,
 	}
 }
 
@@ -116,7 +123,7 @@ func (s *AuthServiceImpl) Register(ctx *fiber.Ctx, user *models.User) (*models.U
 
 	// Hash password if provided
 	if user.Password != nil && *user.Password != "" {
-		// ใช้รหัสผ่านดิบเพื่อบันทึกลงบันทึก
+		// Use raw password for storage
 		rawPassword := *user.Password
 		log.Printf("Register - About to hash password, raw length: %d", len(rawPassword))
 		
@@ -125,8 +132,7 @@ func (s *AuthServiceImpl) Register(ctx *fiber.Ctx, user *models.User) (*models.U
 			return nil, fmt.Errorf("failed to hash password: %w", err)
 		}
 		log.Printf("Register - Password hashed, hash length: %d", len(hashedPassword))
-		
-		// ทดสอบว่าแฮชที่สร้างใหม่สามารถตรวจสอบกับรหัสผ่านเดิมได้หรือไม่
+		// Test if the new hash can be verified with the original password
 		isValid := s.CheckPassword(rawPassword, hashedPassword)
 		log.Printf("Register - Verify hash works: %v", isValid)
 		
@@ -375,4 +381,67 @@ func (s *AuthServiceImpl) CheckPassword(password, hash string) bool {
 	result := password == hash
 	log.Printf("CheckPassword result: %v", result)
 	return result
+}
+
+// LoginWithGoogle handles Google OAuth login
+func (s *AuthServiceImpl) LoginWithGoogle(ctx context.Context, code, state string) (*models.User, string, error) {
+	token, err := s.googleOAuth.ExchangeCode(code)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to exchange code: %w", err)
+	}
+
+	userInfo, err := s.googleOAuth.GetUserInfo(token)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get user info: %w", err)
+	}
+
+	user, err := s.CreateOrUpdateGoogleUser(ctx, userInfo)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create or update user: %w", err)
+	}
+
+	accessToken, err := s.GenerateAccessToken(user)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	return user, accessToken, nil
+}
+
+// CreateOrUpdateGoogleUser creates or updates a user from Google OAuth
+func (s *AuthServiceImpl) CreateOrUpdateGoogleUser(ctx context.Context, userInfo *GoogleUserInfo) (*models.User, error) {
+	existingUser, err := s.userRepo.FindByEmail(ctx, userInfo.Email)
+	if err == nil && existingUser != nil {
+		if existingUser.Provider == "google" {
+			existingUser.ProfilePicture = &userInfo.Picture
+			existingUser.IsVerified = userInfo.VerifiedEmail
+			existingUser.UpdatedAt = time.Now()
+			
+			if err := s.userRepo.Update(ctx, existingUser); err != nil {
+				return nil, fmt.Errorf("failed to update existing user: %w", err)
+			}
+			return existingUser, nil
+		} else {
+			return nil, fmt.Errorf("email already exists with different provider: %s", existingUser.Provider)
+		}
+	}
+
+	name := userInfo.Name
+	user := &models.User{
+		Email:          userInfo.Email,
+		Username:       &name,
+		Provider:       "google",
+		ProviderID:     &userInfo.ID,
+		ProfilePicture: &userInfo.Picture,
+		IsVerified:     userInfo.VerifiedEmail,
+		Role:           models.RoleUser,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to create new user: %w", err)
+	}
+
+	return user, nil
 }

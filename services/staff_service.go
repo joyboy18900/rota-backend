@@ -110,7 +110,7 @@ func (s *staffService) UpdateStaff(ctx context.Context, staff *models.Staff) err
 		return fmt.Errorf("failed to update staff: %w", err)
 	}
 
-	// คัดลอกข้อมูลทั้งหมดกลับไปที่พารามิเตอร์ที่ส่งเข้ามา
+	// Copy all data back to the input parameter
 	*staff = *existingStaff
 
 	return nil

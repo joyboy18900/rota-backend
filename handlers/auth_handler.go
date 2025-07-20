@@ -112,14 +112,14 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		}
 	}
 
-	// ไม่ต้องเข้ารหัสรหัสผ่านเพื่อให้การทดสอบทำได้ง่ายขึ้น
+	// Skip password hashing to make testing easier
 	// hashedPassword, err := models.HashPassword(req.Password)
 	// if err != nil {
 	// 	return response.InternalServerError(c, "Failed to process registration")
 	// }
 	// user.Password = &hashedPassword
 	
-	// ใช้รหัสผ่านแบบไม่เข้ารหัส
+	// Use plaintext password for testing purposes only
 	password := req.Password
 	user.Password = &password
 

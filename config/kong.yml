@@ -3,7 +3,7 @@ _transform: true
 
 services:
   - name: rota-api-service
-    url: http://api:3000
+    url: http://rota-api:3000
     routes:
       - name: public-routes
         paths:

@@ -46,13 +46,13 @@ func (s *scheduleService) CreateSchedule(ctx context.Context, schedule *models.S
 
 // UpdateSchedule updates a schedule
 func (s *scheduleService) UpdateSchedule(ctx context.Context, schedule *models.Schedule) error {
-	// ดึงข้อมูลเดิมก่อน
+	// Get original data first
 	existingSchedule, err := s.scheduleRepo.FindByID(ctx, schedule.ID)
 	if err != nil {
 		return err
 	}
 
-	// อัพเดทเฉพาะฟิลด์ที่ระบุ
+	// Update only specified fields
 	if schedule.RouteID != 0 {
 		existingSchedule.RouteID = schedule.RouteID
 	}
@@ -75,13 +75,13 @@ func (s *scheduleService) UpdateSchedule(ctx context.Context, schedule *models.S
 		existingSchedule.Status = schedule.Status
 	}
 
-	// บันทึกการอัพเดท
+	// Save the update
 	err = s.scheduleRepo.Update(ctx, existingSchedule)
 	if err != nil {
 		return err
 	}
 
-	// คัดลอกข้อมูลที่อัพเดทแล้วกลับไปยังพารามิเตอร์
+	// Copy updated data back to the parameter
 	*schedule = *existingSchedule
 
 	return nil
