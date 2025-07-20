@@ -20,7 +20,6 @@ type GoogleOAuthService interface {
 	GetAuthURL(state string) string
 	GetAuthURLWithRedirect(state, redirectURI string) string
 	ExchangeCode(code string) (*oauth2.Token, error)
-	ExchangeCodeWithRedirect(code, redirectURI string) (*oauth2.Token, error)
 	GetUserInfo(token *oauth2.Token) (*GoogleUserInfo, error)
 	GenerateState() string
 	ValidateState(state string) bool
@@ -111,17 +110,6 @@ func (s *googleOAuthService) ExchangeCode(code string) (*oauth2.Token, error) {
 	defer cancel()
 	
 	return s.config.Exchange(ctx, code)
-}
-
-func (s *googleOAuthService) ExchangeCodeWithRedirect(code, redirectURI string) (*oauth2.Token, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	
-	// Create a temporary config with the custom redirect URI
-	tempConfig := *s.config
-	tempConfig.RedirectURL = redirectURI
-	
-	return tempConfig.Exchange(ctx, code)
 }
 
 func (s *googleOAuthService) GetUserInfo(token *oauth2.Token) (*GoogleUserInfo, error) {

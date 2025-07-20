@@ -77,22 +77,8 @@ func (h *GoogleOAuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid or expired state parameter")
 	}
 	
-	// Determine redirect_uri used for this callback
-	// If the request came from frontend, use frontend callback URL
-	// Otherwise, use the default backend callback URL
-	redirectURI := os.Getenv("GOOGLE_REDIRECT_URL") // default
-	referer := c.Get("Referer")
-	if strings.Contains(referer, "localhost:3000") || strings.Contains(referer, os.Getenv("FRONTEND_URL")) {
-		// This callback was initiated from frontend
-		frontendURL := os.Getenv("FRONTEND_URL")
-		if frontendURL == "" {
-			frontendURL = "http://localhost:3000"
-		}
-		redirectURI = frontendURL + "/auth/callback"
-	}
-	
-	// Process Google login with correct redirect URI
-	user, accessToken, err := h.authService.LoginWithGoogleAndRedirect(c.Context(), code, state, redirectURI)
+	// Process Google login
+	user, accessToken, err := h.authService.LoginWithGoogle(c.Context(), code, state)
 	if err != nil {
 		// Log and return authentication error
 		fmt.Printf("Error authenticating with Google: %v\n", err)
