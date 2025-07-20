@@ -80,15 +80,12 @@ func (h *GoogleOAuthHandler) GoogleCallback(c *fiber.Ctx) error {
 	// Process Google login
 	user, accessToken, err := h.authService.LoginWithGoogle(c.Context(), code, state)
 	if err != nil {
-		// Log and return authentication error
-		fmt.Printf("Error authenticating with Google: %v\n", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to authenticate with Google: "+err.Error())
 	}
 	
 	// Generate refresh token
 	refreshToken, err := h.authService.GenerateRefreshToken()
 	if err != nil {
-		fmt.Printf("Error generating refresh token: %v\n", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to generate refresh token")
 	}
 	

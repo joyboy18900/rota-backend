@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -125,17 +124,10 @@ func (s *AuthServiceImpl) Register(ctx *fiber.Ctx, user *models.User) (*models.U
 	if user.Password != nil && *user.Password != "" {
 		// Use raw password for storage
 		rawPassword := *user.Password
-		log.Printf("Register - About to hash password, raw length: %d", len(rawPassword))
-		
 		hashedPassword, err := s.HashPassword(rawPassword)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash password: %w", err)
 		}
-		log.Printf("Register - Password hashed, hash length: %d", len(hashedPassword))
-		// Test if the new hash can be verified with the original password
-		isValid := s.CheckPassword(rawPassword, hashedPassword)
-		log.Printf("Register - Verify hash works: %v", isValid)
-		
 		user.Password = &hashedPassword
 	}
 
@@ -156,25 +148,17 @@ func (s *AuthServiceImpl) Register(ctx *fiber.Ctx, user *models.User) (*models.U
 func (s *AuthServiceImpl) Login(ctx *fiber.Ctx, email, password string) (*models.User, string, error) {
 	// Get user by email
 	user, err := s.userRepo.FindByEmail(ctx.Context(), email)
-	if err != nil || user == nil {
-		log.Printf("Login failed: User not found for email: %s, Error: %v", email, err)
+	if err != nil {
 		return nil, "", ErrInvalidCredentials
 	}
-
-	// Check if user has a password (OAuth users might not have one)
-	if user.Password == nil {
-		log.Printf("Login failed: User has no password (possibly OAuth user): %s", email)
-		return nil, "", errors.New("please use the appropriate login method")
+	
+	// Check if user has a password (OAuth users might not have passwords)
+	if user.Password == nil || *user.Password == "" {
+		return nil, "", ErrInvalidCredentials
 	}
-
-	// Log password information for debugging
-	log.Printf("Login attempt - Email: %s, Input password length: %d, Stored hash length: %d", 
-		email, len(password), len(*user.Password))
-
+	
 	// Verify password
-	passwordMatch := s.CheckPassword(password, *user.Password)
-	if !passwordMatch {
-		log.Printf("Login failed: Password verification failed for user: %s", email)
+	if !s.CheckPassword(password, *user.Password) {
 		return nil, "", ErrInvalidCredentials
 	}
 
@@ -186,12 +170,9 @@ func (s *AuthServiceImpl) Login(ctx *fiber.Ctx, email, password string) (*models
 
 	// Update last login time
 	now := time.Now()
-	// LastLoginAt field is removed as it doesn't exist in the database model
-	// user.LastLoginAt = &now
 	user.UpdatedAt = now
 	if err := s.userRepo.Update(ctx.Context(), user); err != nil {
-		log.Printf("Failed to update user last login time: %v", err)
-		// Continue even if update fails - login is still successful
+		// Don't fail the login if we can't update last login time
 	}
 
 	return user, token, nil
@@ -287,33 +268,23 @@ func (s *AuthServiceImpl) Logout(token string) error {
 
 // IsTokenBlacklisted checks if a token is in the blacklist
 func (s *AuthServiceImpl) IsTokenBlacklisted(token string) bool {
-	// Check if redisRepo is nil using reflection
 	if s.redisRepo == nil {
-		log.Printf("Redis repository not initialized, token blacklist check skipped")
 		return false
 	}
-
+	
 	exists, err := s.redisRepo.IsBlacklisted(context.Background(), token)
 	if err != nil {
-		log.Printf("Error checking token blacklist: %v", err)
-		return false // If there's an error, assume token is not blacklisted
+		return false
 	}
 	return exists
 }
 
 // AddToBlacklist adds a token to the blacklist
 func (s *AuthServiceImpl) AddToBlacklist(token string, expiry time.Duration) error {
-	// Check if redisRepo is nil
 	if s.redisRepo == nil {
-		log.Printf("Redis repository not initialized, token blacklist not available")
-		return nil
+		return fmt.Errorf("redis not available")
 	}
-
-	// Add token to blacklist with expiry
-	if err := s.redisRepo.AddToBlacklist(context.Background(), token, expiry); err != nil {
-		return fmt.Errorf("failed to add token to blacklist: %w", err)
-	}
-	return nil
+	return s.redisRepo.AddToBlacklist(context.Background(), token, expiry)
 }
 
 // GetJWTSecret returns the JWT secret key
@@ -377,10 +348,7 @@ func (s *AuthServiceImpl) HashPassword(password string) (string, error) {
 
 // CheckPassword compares passwords directly (no hashing for testing)
 func (s *AuthServiceImpl) CheckPassword(password, hash string) bool {
-	log.Printf("CheckPassword - Comparing plain passwords: input='%s', stored='%s'", password, hash)
-	result := password == hash
-	log.Printf("CheckPassword result: %v", result)
-	return result
+	return password == hash
 }
 
 // LoginWithGoogle handles Google OAuth login

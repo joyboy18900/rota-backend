@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"rota-api/dto"
 	"rota-api/models"
 	"rota-api/services"
@@ -63,10 +62,6 @@ func (h *FavoriteHandler) CreateFavorite(c *fiber.Ctx) error {
 	// Get user ID and role from context (set by AuthMiddleware)
 	userID, _ := c.Locals("userID").(int)
 	userRole := c.Locals("userRole")
-
-	// Log values for debugging
-	fmt.Printf("CreateFavorite - userID from context: %v (type: %T), favorite.UserID: %v (type: %T)\n", 
-		userID, userID, favorite.UserID, favorite.UserID)
 
 	// Security check: ensure user can only create favorites for themselves unless they're an admin
 	if userRole != models.RoleAdmin && int(favorite.UserID) != userID {
