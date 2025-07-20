@@ -113,6 +113,42 @@
               },
               "description": "ออกจากระบบ (ทำ token ให้หมดอายุ)"
             }
+          },
+          {
+            "name": "Google Login URL",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/auth/google",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "auth", "google"]
+              },
+              "description": "Get Google OAuth login URL to redirect user for authentication"
+            }
+          },
+          {
+            "name": "Google OAuth Callback",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "{{base_url}}/api/v1/auth/google/callback?code=4/0AfJohXmMaFoRpDIDtQca0uNil1UUC-EXAMPLE&state=state-token",
+                "host": ["{{base_url}}"],
+                "path": ["api", "v1", "auth", "google", "callback"],
+                "query": [
+                  {
+                    "key": "code",
+                    "value": "4/0AfJohXmMaFoRpDIDtQca0uNil1UUC-EXAMPLE",
+                    "description": "Authorization code from Google"
+                  },
+                  {
+                    "key": "state",
+                    "value": "state-token",
+                    "description": "State parameter for CSRF protection"
+                  }
+                ]
+              },
+              "description": "Callback endpoint that receives the authorization code from Google OAuth"
+            }
           }
         ]
       },
