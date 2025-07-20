@@ -27,8 +27,15 @@ func (h *GoogleOAuthHandler) GoogleLogin(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusForbidden, "Invalid origin")
 	}
 	
+	// Get redirect_uri from query parameter, fallback to default if not provided
+	redirectURI := c.Query("redirect_uri")
+	if redirectURI == "" {
+		// Use default redirect URI from environment
+		redirectURI = os.Getenv("GOOGLE_REDIRECT_URL")
+	}
+	
 	state := h.googleOAuth.GenerateState()
-	authURL := h.googleOAuth.GetAuthURL(state)
+	authURL := h.googleOAuth.GetAuthURLWithRedirect(state, redirectURI)
 	
 	return c.JSON(fiber.Map{
 		"auth_url": authURL,
@@ -70,8 +77,22 @@ func (h *GoogleOAuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid or expired state parameter")
 	}
 	
-	// Process Google login
-	user, accessToken, err := h.authService.LoginWithGoogle(c.Context(), code, state)
+	// Determine redirect_uri used for this callback
+	// If the request came from frontend, use frontend callback URL
+	// Otherwise, use the default backend callback URL
+	redirectURI := os.Getenv("GOOGLE_REDIRECT_URL") // default
+	referer := c.Get("Referer")
+	if strings.Contains(referer, "localhost:3000") || strings.Contains(referer, os.Getenv("FRONTEND_URL")) {
+		// This callback was initiated from frontend
+		frontendURL := os.Getenv("FRONTEND_URL")
+		if frontendURL == "" {
+			frontendURL = "http://localhost:3000"
+		}
+		redirectURI = frontendURL + "/auth/callback"
+	}
+	
+	// Process Google login with correct redirect URI
+	user, accessToken, err := h.authService.LoginWithGoogleAndRedirect(c.Context(), code, state, redirectURI)
 	if err != nil {
 		// Log and return authentication error
 		fmt.Printf("Error authenticating with Google: %v\n", err)
