@@ -115,7 +115,7 @@
             }
           },
           {
-            "name": "Google Login URL",
+            "name": "เริ่มต้น Google Login",
             "request": {
               "method": "GET",
               "url": {
@@ -123,7 +123,7 @@
                 "host": ["{{base_url}}"],
                 "path": ["api", "v1", "auth", "google"]
               },
-              "description": "Get Google OAuth login URL to redirect user for authentication"
+              "description": "เริ่มต้นกระบวนการเข้าสู่ระบบด้วย Google OAuth 2.0"
             }
           },
           {
@@ -131,23 +131,21 @@
             "request": {
               "method": "GET",
               "url": {
-                "raw": "{{base_url}}/api/v1/auth/google/callback?code=4/0AfJohXmMaFoRpDIDtQca0uNil1UUC-EXAMPLE&state=state-token",
+                "raw": "{{base_url}}/api/v1/auth/google/callback?code={{code}}&state={{state}}",
                 "host": ["{{base_url}}"],
                 "path": ["api", "v1", "auth", "google", "callback"],
                 "query": [
                   {
                     "key": "code",
-                    "value": "4/0AfJohXmMaFoRpDIDtQca0uNil1UUC-EXAMPLE",
-                    "description": "Authorization code from Google"
+                    "value": "{{code}}"
                   },
                   {
                     "key": "state",
-                    "value": "state-token",
-                    "description": "State parameter for CSRF protection"
+                    "value": "{{state}}"
                   }
                 ]
               },
-              "description": "Callback endpoint that receives the authorization code from Google OAuth"
+              "description": "รับ callback จาก Google OAuth หลังจากผู้ใช้ยืนยันตัวตนสำเร็จ"
             }
           }
         ]
