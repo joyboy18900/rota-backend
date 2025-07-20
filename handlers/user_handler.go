@@ -154,7 +154,7 @@ func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
 
 // CreateUser creates a new user (admin only)
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	// ใช้ struct ชั่วคราวเพื่อรับข้อมูลจาก request
+
 	type CreateUserRequest struct {
 		Username string          `json:"username"`
 		Email    string          `json:"email"`
@@ -187,7 +187,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// สร้าง User จากข้อมูลใน request
+
 	var newUser models.User
 	newUser.Email = req.Email
 	newUser.Username = &req.Username

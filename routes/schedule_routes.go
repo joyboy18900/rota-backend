@@ -16,7 +16,7 @@ func SetupScheduleRoutes(
 	// Public group for read-only operations that don't need authentication
 	publicGroup := app.Group("/api/v1/schedules")
 	
-	// Advanced search endpoint - ต้องอยู่ก่อนเส้นทาง /:id เพื่อป้องกันการจับคู่ผิดพลาด
+	// Advanced search endpoint
 	publicGroup.Get("/search", scheduleHandler.SearchSchedules)
 	
 	// Read operations - accessible to all users without authentication
